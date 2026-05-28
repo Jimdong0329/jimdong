@@ -1,0 +1,2023 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>大考中心 Level 6 單字學習機</title>
+    <style>
+        :root {
+            --primary-color: #4facfe;
+            --secondary-color: #00f2fe;
+            --accent-color: #FFD700;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --success: #4cd964;
+            --error: #ff3b30;
+            --vowel-color: #ff3b30;
+            --consonant-color: #007aff;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+            margin: 0; padding: 0;
+            min-height: 100vh;
+            /* 強制水平與垂直置中 */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            width: 100%; max-width: 900px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            padding: 15px;
+            display: flex; flex-direction: column; gap: 15px;
+            margin: 20px; 
+            min-height: 85vh;
+        }
+
+        header {
+            display: flex; flex-direction: column; gap: 12px;
+            align-items: center; background: #fff; padding: 15px;
+            border-radius: 15px; border: 2px solid #eee;
+            width: 100%;
+        }
+
+        h1 { margin: 0; font-size: 1.4rem; color: #ff9a9e; text-align: center; line-height: 1.4; }
+
+        /* A-Z Navigation */
+        .alpha-nav {
+            display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
+            width: 100%; margin-bottom: 5px;
+            max-height: 120px; overflow-y: auto; 
+        }
+        .alpha-btn {
+            width: 32px; height: 32px;
+            border: 1px solid #ddd; border-radius: 6px;
+            background: #f9f9f9; cursor: pointer;
+            font-weight: bold; color: #555;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; transition: all 0.1s;
+            flex-shrink: 0;
+        }
+        .alpha-btn.active { 
+            background: var(--primary-color); color: white; 
+            border-color: var(--primary-color); transform: scale(1.15);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .alpha-btn:disabled { opacity: 0.2; cursor: default; }
+
+        .control-group {
+            display: flex; gap: 10px; width: 100%; 
+            justify-content: space-between; align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .info-bar {
+            font-size: 1rem; color: #666; background: #f0f8ff; 
+            padding: 8px 10px; border-radius: 8px; width: 100%; text-align: center;
+            border: 1px solid #d1eaff;
+        }
+
+        .select-wrapper {
+            display: flex; gap: 5px; flex: 1;
+            min-width: 200px; 
+            align-items: center;
+        }
+
+        select {
+            padding: 10px; border-radius: 8px; border: 2px solid var(--primary-color);
+            font-size: 1rem; background: white; flex: 1; cursor: pointer; width: 100%;
+        }
+
+        .refresh-btn {
+            background: var(--primary-color); color: white; border: none;
+            border-radius: 8px; width: 44px; height: 42px; cursor: pointer; font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+
+        /* Tabs Optimization for Mobile */
+        .tabs {
+            display: flex; justify-content: center; background: #f0f4f8;
+            border-radius: 15px; padding: 5px; gap: 3px; width: 100%;
+            flex-wrap: nowrap; /* 不換行 */
+            overflow-x: auto; /* 允許橫向滑動 */
+            -webkit-overflow-scrolling: touch; 
+        }
+        .tab-btn {
+            flex: 1; padding: 10px 2px; border: none; background: transparent;
+            border-radius: 10px; font-size: 1rem; font-weight: bold;
+            color: #666; cursor: pointer; transition: 0.2s;
+            white-space: nowrap; 
+            min-width: auto;
+        }
+        .tab-btn.active { background: var(--primary-color); color: white; box-shadow: 0 3px 6px rgba(79, 172, 254, 0.3); }
+
+        .stage {
+            display: flex; align-items: center; justify-content: space-between;
+            min-height: 350px; position: relative; width: 100%;
+            flex: 1;
+            flex-direction: row;
+        }
+
+        .nav-btn {
+            background: var(--accent-color); border: none;
+            width: 60px; height: 60px; border-radius: 50%;
+            font-size: 2rem; font-weight: bold; color: white;
+            cursor: pointer; box-shadow: 0 4px 0 #c9a800;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 20; flex-shrink: 0;
+            transition: transform 0.1s;
+        }
+        .nav-btn:active { transform: translateY(3px); box-shadow: none; }
+        .nav-btn:disabled { background: #ddd; cursor: not-allowed; box-shadow: none; opacity: 0.5; }
+
+        .content-card {
+            flex: 1; margin: 0 15px; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; text-align: center;
+            background: #fff; border-radius: 15px;
+            min-height: 300px; width: 100%; overflow: hidden;
+            border: 1px solid #f0f0f0;
+        }
+
+        /* 字體不換行 + 自動縮放 */
+        .word-display {
+            font-weight: bold; margin: 15px 0;
+            white-space: normal; 
+            word-wrap: break-word; 
+            overflow-wrap: break-word;
+            width: 100%;
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            line-height: 1.2;
+            color: var(--text-color);
+            transition: font-size 0.1s;
+            text-align: center;
+        }
+
+        .vowel { color: var(--vowel-color); }
+        .consonant { color: var(--consonant-color); }
+        .syllable-separator { margin: 0 1px; color: #ccc; font-weight: bold; font-size: 0.6em; vertical-align: middle;}
+        
+        .chinese-meaning { font-size: 1.6rem; color: #555; margin-bottom: 8px; font-weight: 600; }
+        .phonetic { font-family: sans-serif; color: #888; font-size: 1.2rem; margin-bottom: 10px; }
+        
+        .letter-pool, .answer-area {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+            margin-top: 15px; min-height: 50px; width: 100%;
+        }
+        .answer-area { border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 10px; }
+
+        .block-btn {
+            width: 44px; height: 44px; font-size: 1.5rem;
+            background: white; border: 2px solid var(--primary-color);
+            border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            user-select: none; box-shadow: 0 3px 0 #ddd; transition: transform 0.1s;
+        }
+        .block-btn:active { transform: translateY(2px); box-shadow: none; }
+        .block-btn.used { opacity: 0.2; pointer-events: none; border-color: #ccc; box-shadow: none;}
+
+        .input-box {
+            font-size: 1.5rem; 
+            padding: 10px; border: 3px solid var(--primary-color);
+            border-radius: 12px; width: 100%; max-width: 350px; text-align: center; outline: none;
+            margin-top: 15px;
+        }
+        .input-box.correct { border-color: var(--success); background: #f0fff4; }
+        .input-box.wrong { border-color: var(--error); background: #fff5f5; }
+
+        /* Dictate Hint Style - Optimized for Mobile */
+        .dictate-hint {
+            font-size: 1.6rem;
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--primary-color);
+            margin: 15px 0 5px 0;
+            font-weight: bold;
+            /* 修正：字距縮小，防止過寬 */
+            letter-spacing: 2px;
+            white-space: pre-wrap; 
+            word-break: break-all;
+            text-align: center;
+            line-height: 1.4;
+            max-width: 100%;
+        }
+
+        /* Quiz Styles */
+        .quiz-options {
+            display: flex; flex-direction: column; gap: 10px;
+            width: 100%; max-width: 500px;
+            margin-top: 20px;
+        }
+        .option-btn {
+            padding: 15px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            color: #444;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            position: relative;
+        }
+        .option-btn:hover { background: #f9f9f9; border-color: #bbb; }
+        .option-btn:active { transform: scale(0.98); }
+        .option-btn.correct { 
+            background: var(--success); color: white; border-color: var(--success); 
+            animation: bounce 0.4s;
+        }
+        .option-btn.wrong { 
+            background: var(--error); color: white; border-color: var(--error); 
+            animation: shake 0.4s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .feedback-msg {
+            margin-top: 15px; font-size: 1.3rem; font-weight: bold; min-height: 1.5em; text-align: center;
+            white-space: pre-wrap; line-height: 1.4;
+        }
+        
+        .btn {
+            padding: 10px 20px; border-radius: 25px; border: none;
+            font-size: 1.1rem; cursor: pointer; background: #eee;
+            display: flex; align-items: center; gap: 6px; transition: 0.2s;
+        }
+        .btn:hover { filter: brightness(0.95); }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-accent { background: var(--accent-color); color: #333; }
+
+        @media (max-width: 600px) {
+            .app-container { 
+                margin: 0; 
+                border-radius: 0; 
+                min-height: 100vh;
+                justify-content: flex-start;
+                padding: 10px;
+            }
+            .control-group { flex-direction: column; align-items: stretch; gap: 10px; }
+            .select-wrapper { width: 100%; }
+            .alpha-btn { width: 11vw; height: 11vw; max-width: 35px; max-height: 35px; font-size: 0.9rem; }
+            
+            .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); opacity: 0.9; width: 50px; height: 50px; font-size: 1.5rem; }
+            .nav-btn.prev { left: -5px; }
+            .nav-btn.next { right: -5px; }
+            
+            .content-card { margin: 0 35px; padding: 10px; }
+            
+            /* 手機版修正 */
+            .dictate-hint {
+                font-size: 1.2rem;
+                letter-spacing: 1px; /* 縮小字距，避免底線連在一起但又不太寬 */
+            }
+            .word-display {
+                max-width: 85vw; /* 防止破表 */
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>🏆大考 Level 6 單字學習</h1>
+        
+        <div class="info-bar" id="statusInfo">載入中...</div>
+
+        <div class="alpha-nav" id="alphaNav"></div>
+
+        <div class="control-group">
+            <div class="select-wrapper">
+                <select id="levelSelect" onchange="changeLevel()">
+                    <option>請先選擇字母...</option>
+                </select>
+            </div>
+            <div class="select-wrapper">
+                <select id="voiceSelect" onchange="changeVoice()">
+                    <option value="">語音...</option>
+                </select>
+                <button class="refresh-btn" onclick="initVoices(true)" title="重整語音">🔊</button>
+            </div>
+        </div>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="setMode('learn')">📖 學習</button>
+        <button class="tab-btn" onclick="setMode('block')">🧩 積木</button>
+        <button class="tab-btn" onclick="setMode('dictate')">✍️ 聽寫</button>
+        <button class="tab-btn" onclick="setMode('quiz')">📝 測驗</button>
+    </nav>
+
+    <main class="stage">
+        <button class="nav-btn prev" onclick="prevWord()">&lt;</button>
+        <div class="content-card" id="cardArea">
+            <div style="color:#888; margin-top:40px;">請點選上方字母開始學習</div>
+        </div>
+        <button class="nav-btn next" onclick="nextWord()">&gt;</button>
+    </main>
+</div>
+
+<script>
+    // Level 6 Vocabulary Data
+    const rawVocabulary = `
+abbreviate|vt.vi.縮寫|[ə'brivɪ͵et]
+abbreviation|n.縮寫|[ə͵brivɪ'eʃən]
+abnormal|adj.異常的|[æb'nɔrm!]
+aboriginal|adj.原生的 n.原住民|[͵æbə'rɪdʒən!]
+abound|vi.充滿|[ə'baʊnd]
+absentminded|adj.心不在焉的|['æbsnt'maɪndɪd]
+abstraction|n.抽象|[æb'strækʃən]
+abundance|n.充裕|[ə'bʌndəns]
+abuse|n.vt.虐待|[ə'bjus]
+accelerate|vt.vi.加速|[æk'sɛlə͵ret]
+acceleration|n.加速|[æk͵sɛlə'reʃən]
+accessible|adj.易接近的|[æk'sɛsəb!]
+accessory|n.配件|[æk'sɛsərɪ]
+accommodate|vt.容納|[ə'kɑmə͵det]
+accommodation|n.住宿|[ə͵kɑmə'deʃən]
+accord|vt.vi.n.(使…)一致|[ə'kɔrd]
+accordance|n.一致|[ə'kɔrdəns]
+accordingly|adv.因此|[ə'kɔrdɪŋlɪ]
+accountable|adj.負責任的|[ə'kaʊntəb!]
+accounting|n.會計|[ə'kaʊntɪŋ]
+accumulate|vt.vi.累積|[ə'kjumjə͵let]
+accumulation|n.累積|[ə͵kjumjə'leʃən]
+accusation|n.控訴|[͵ækjə'zeʃən]
+acquisition|n.獲得|[͵ækwə'zɪʃən]
+activist|n.激進份子；活動家|['æktəvɪst]
+acute|adj.急性的|[ə'kjut]
+adaptation|n.適應|[͵ædæp'teʃən]
+addict|vt.使…沉迷 n.上癮者|[ə'dɪkt]
+addiction|n.濫用；上癮|[ə'dɪkʃən]
+administer / administrate|vt.管理|[əd'mɪnəstɚ]
+administration|n.管理|[əd͵mɪnə'streʃən]
+administrative|adj.管理上的；行政的|[əd'mɪnə͵stretɪv]
+administrator|n.管理者|[əd'mɪnə͵stretɚ]
+advocate|vt.提倡 n.提倡者|['ædvə͵ket]
+affectionate|adj.充滿感情的|[ə'fɛkʃənɪt]
+affirm|vt.vi.斷言|[ə'fɝm]
+aggression|n.侵略|[ə'grɛʃən]
+alcoholic|adj.酒精的|[͵ælkə'hɔlɪk]
+alienate|vt.使…疏遠|['eljən͵et]
+alliance|n.同盟|[ə'laɪəns]
+allocate|vt.分配|['ælə͵ket]
+alongside|adv.prep.並排(地)|[ə'lɔŋ'saɪd]
+alternative|adj.替代的 n.選擇|[ɔl'tɝnətɪv]
+ambiguity|n.模稜兩可|[͵æmbɪ'gjuətɪ]
+ambiguous|adj.模稜兩可的|[æm'bɪgjʊəs]
+ambulance|n.救護車|['æmbjələns]
+ambush|n.vt.vi.埋伏|['æmbʊʃ]
+amiable|adj.和藹的|['emɪəb!]
+amplify|vt.vi.增強|['æmplə͵faɪ]
+analects|n.語錄|[͵ænə'lɛkts]
+analogy|n.相似之處|[ə'nælədʒɪ]
+analyst|n.分析師|['æn!ɪst]
+analytical|adj.分析的；有條理的|[ˌænə'lɪtɪk(ə)l]
+anecdote|n.軼事|['ænɪk͵dot]
+animate|vt.賦予生命 adj.活的|['ænə͵met]
+annoyance|n.惱怒|[ə'nɔɪəns]
+anonymous|adj.匿名的|[ə'nɑnəməs]
+Antarctic|n.adj.南極(的)|[æn'tɑrktɪk]
+antenna|n.天線|[æn'tɛnə]
+antibiotic|n.adj.抗生素|[͵æntɪbaɪ'ɑtɪk]
+antibody|n.抗體|['æntɪ͵bɑdɪ]
+anticipate|vt.預期|[æn'tɪsə͵pet]
+anticipation|n.期望|[æn͵tɪsə'peʃən]
+antonym|n.反義字|['æntə͵nɪm]
+applicable|adj.適用的|['æplɪkəb!]
+apprentice|n.學徒|[ə'prɛntɪs]
+approximate|adj.大約的|[ə'prɑksəmɪt]
+aptitude|n.天賦|['æptə͵tjud]
+Arctic|n.adj.北極(的)|['ɑrktɪk]
+arrogant|adj.傲慢的|['ærəgənt]
+artery|n.動脈；幹線|['ɑrtərɪ]
+articulate|adj.口齒清晰的|[ɑr'tɪkjə͵let]
+artifact|n.人工製品；手工藝品|['ɑrtɪ͵fækt]
+assassinate|vt.暗殺|[ə'sæsɪn͵et]
+assert|vt.斷言|[ə'sɝt]
+assess|vt.評估|[ə'sɛs]
+assessment|n.評估|[ə'sɛsmənt]
+assumption|n.假定|[ə'sʌmpʃən]
+asthma|n.氣喘|['æzmə]
+asylum|n.政治庇護|[ə'saɪləm]
+attainment|n.到達；成就|[ə'tenmənt]
+attendant|n.接待員|[ə'tɛndənt]
+attic|n.閣樓|['ætɪk]
+auction|n.vt.拍賣|['ɔkʃən]
+authentic|adj.真實的|[ɔ'θɛntɪk]
+authorize|vt.授權|['ɔθə͵raɪz]
+autograph / signature|n.簽名|['ɔtə͵græf]
+autonomy|n.自治|[ɔ'tɑnəmɪ]
+aviation|n.飛行|[͵evɪ'eʃən]
+awesome|adj.令人敬畏的|['ɔsəm]
+barometer|n.氣壓計|[bə'rɑmətɚ]
+beckon|vt.vi.n.示意|['bɛkn]
+besiege|vt.包圍|[bɪ'sidʒ]
+betray|vt.背叛|[bɪ'tre]
+beverage|n.飲料|['bɛvərɪdʒ]
+bias|n.vt.(使有)偏見|['baɪəs]
+binoculars|n.雙筒望遠鏡|[bɪ'nɑkjəlɚs]
+biochemistry|n.生物化學|['baɪo'kɛmɪstrɪ]
+biological|adj.生物的|[͵baɪə'lɑdʒɪk!]
+bizarre|adj.怪異的|[bɪ'zɑr]
+bleak|adj.荒涼的|[blik]
+blunder|n.vi.vt.犯錯|['blʌndɚ]
+blunt|adj.鈍的|[blʌnt]
+bombard|vt.砲轟|[bɑm'bɑrd]
+bondage|n.奴役；束縛|['bɑndɪdʒ]
+boost|n.vt.促進；提高|[bust]
+bout|n.回合|[baʊt]
+boycott|vt.n.抵制|['bɔɪ͵kɑt]
+breakdown|n.故障|['brek͵daʊn]
+breakthrough|n.突破|['brek͵θru]
+breakup|n.瓦解；分手|['brek'ʌp]
+brew|vt.vi.n.釀造；沖泡|[bru]
+brink|n.邊緣|[brɪŋk]
+brisk|adj.活潑的|[brɪsk]
+brochure|n.小冊子|[bro'ʃʊr]
+brute|n.獸；畜生 adj.蠻橫的|[brut]
+buckle|n.扣環 vt.vi.扣住|['bʌk!]
+bulky|adj.笨重的|['bʌlkɪ]
+bureaucracy|n.官僚|[bjʊ'rɑkrəsɪ]
+burial|n.adj.葬禮(的)|['bɛrɪəl]
+byte|n.位元組|[baɪt]
+caffeine|n.咖啡因|['kæfiɪn]
+calcium|n.鈣|['kælsɪəm]
+canvas|n.帆布|['kænvəs]
+capability|n.能力|[͵kepə'bɪlətɪ]
+capsule|n.膠囊|['kæps!]
+caption|n.標題；字幕|['kæpʃən]
+captive|n.俘虜|['kæptɪv]
+captivity|n.囚禁|[kæp'tɪvətɪ]
+carbohydrate|n.碳水化合物|[͵kɑrbə'haɪdret]
+caress|n.vt.愛撫|[kə'rɛs]
+carol|n.頌歌|['kærəl]
+cashier|n.出納；出納員|[kæ'ʃɪr]
+casualty|n.傷亡人員|['kæʒjʊəltɪ]
+catastrophe|n.大災難|[kə'tæstrəfɪ]
+cater|vi.承辦宴席；迎合|['ketɚ]
+cavalry|n.騎兵|['kæv!rɪ]
+cavity|n.穴；(牙的)蛀洞|['kævətɪ]
+cemetery|n.墓地|['sɛmə͵tɛrɪ]
+certainty|n.確實|['sɝtəntɪ]
+certify|vt.vi.證明|['sɝtə͵faɪ]
+champagne|n.香檳酒|[ʃæm'pen]
+chaos|n.混亂|['keɑs]
+characterize|vt.具有...的特徵|[kærəktə͵raɪz]
+coal|n.木炭|[kol]
+chariot|n.雙輪戰車|['tʃærɪət]
+charitable|adj.慈善的|['tʃærətəb!]
+cholesterol|n.膽固醇|[kə'lɛstə͵rol]
+chronic|adj.慢性的|['krɑnɪk]
+chuckle|vi.咯咯地笑|['tʃʌk!]
+chunk|n.大塊；厚片|[tʃʌŋk]
+civilize|v.使文明|['sɪvə͵laɪz]
+clamp|v.鉗緊|[klæmp]
+clarity|n.明晰|['klærətɪ]
+cleanse|vt.使清潔；淨化|[klɛnz]
+clearance|n.清除；空地|['klɪrəns]
+clench|vt.捏緊|[klɛntʃ]
+clinical|adj.臨床的|['klɪnɪk!]
+clone|n.複製品/人|[klon]
+closure|n.關閉；終止|['kloʒɚ]
+coffin|n.棺材|['kɔfɪn]
+coherent|adj.連貫的|[ko'hɪrənt]
+coincide|vi.同時發生|[͵koɪn'saɪd]
+coincidence|n.巧合|[ko'ɪnsɪdəns]
+collective|adj.集體的|[kə'lɛktɪv]
+collector|n.收集者|[kə'lɛktɚ]
+collide|vi.碰撞；衝突|[kə'laɪd]
+collision|n.碰撞；衝突|[kə'lɪʒən]
+colloquial|adj.口語的|[kə'lokwɪəl]
+columnist|n.專欄作家|['kɑləmɪst]
+commemorate|vt.紀念|[kə'mɛmə͵ret]
+commence|vt.開始|[kə'mɛns]
+commentary|n.評論|['kɑmən͵tɛrɪ]
+commitment|n.承諾|[kə'mɪtmənt]
+communicative|adj.暢談的|[kə'mjunə͵ketɪv]
+companionship|n.伴侶關係|[kəm'pænjən͵ʃɪp]
+comparable|adj.可比較的|['kɑmpərəb!]
+comparative|adj.比較的|[kəm'pærətɪv]
+compatible|adj.相容的|[kəm'pætəb!]
+compensate|vt.補償|['kɑmpən͵set]
+compensation|n.補償(金)|[͵kɑmpən'seʃən]
+competence|n.勝任|['kɑmpətəns]
+competent|adj.能幹的|['kɑmpətənt]
+compile|vt.編輯|[kəm'paɪl]
+complement|n.補充物|['kɑmpləmənt]
+complexion|n.面色|[kəm'plɛkʃən]
+complexity|n.複雜(性)|[kəm'plɛksətɪ]
+complication|n.複雜(化)；併發症|[͵kɑmplə'keʃən]
+component|n.零件；成分|[kəm'ponənt]
+comprehensive|adj.無所不包的|[͵kɑmprɪ'hɛnsɪv]
+comprise|vt.包括|[kəm'praɪz]
+concede|vt.(勉強)承認|[kən'sid]
+conceit|n.自滿|[kən'sit]
+conception|n.觀念；創始|[kən'sɛpʃən]
+concession|n.讓步；租界|[kən'sɛʃən]
+concise|adj.簡明的|[kən'saɪs]
+condense|vt.壓縮；濃縮|[kən'dɛns]
+confer|vt.授予(學位等)|[kən'fɝ]
+confidential|adj.機密的|[͵kɑnfə'dɛnʃəl]
+conform|vi.遵守；符合|[kən'fɔrm]
+confrontation|n.對抗|[͵kɑnfrʌn'teʃən]
+congressman|n.美國國會議員|['kɑŋgrəsmən]
+conquest|n.征服|['kɑŋkwɛst]
+conscientious|adj.憑良心的|[͵kɑnʃɪ'ɛnʃəs]
+consensus|n.一致；合意|[kən'sɛnsəs]
+conservation|n.保育|[͵kɑnsɚ'veʃən]
+consolation|n.安慰|[͵kɑnsə'leʃən]
+conspiracy|n.陰謀|[kən'spɪrəsɪ]
+constituent|adj.組成的 n.選民|[kən'stɪtʃʊənt]
+consultation|n.諮詢|[͵kɑnsəl'teʃən]
+consumption|n.消耗|[kən'sʌmpʃən]
+contemplation|n.沈思|[͵kɑntɛm'pleʃən]
+contestant|n.競爭者|[kən'tɛstənt]
+contractor|n.承包商|['kɑntræktɚ]
+contradict|vt.與...矛盾|[͵kɑntrə'dɪkt]
+contradiction|n.矛盾|[͵kɑntrə'dɪkʃən]
+controversial|adj.有爭議的|[͵kɑntrə'vɝʃəl]
+controversy|n.爭議|['kɑntrə͵vɝsɪ]
+conviction|n.定罪；信念|[kən'vɪkʃən]
+coordinate|vt.協調|[ko'ɔrdnɪt]
+cordial|adj.熱忱的|['kɔrdʒəl]
+core|n.果核；核心|[kor]
+corporate|adj.公司的；團體的|['kɔrpərɪt]
+corps|n.兵團；軍；隊|[kɔr]
+corpse|n.屍體|[kɔrps]
+correspondent|n.通信者|[͵kɔrɪ'spɑndənt]
+corruption|n.腐化；貪污|[kə'rʌpʃən]
+cosmetic|adj.化妝用的|[kɑz'mɛtɪk]
+cosmetics|n.化妝品|[kɑz'mɛtɪks]
+cosmopolitan|adj.世界性的|[͵kɑzmə'pɑlətn]
+counterpart|n.對應的人(或物)|['kaʊntɚ͵pɑrt]
+coverage|n.覆蓋範圍|['kʌvərɪdʒ]
+covet|vt.垂涎；貪圖|['kʌvɪt]
+cramp|n.抽筋 vt.限制|[kræmp]
+credibility|n.可信度|[͵krɛdə'bɪlətɪ]
+credible|adj.可信的|['krɛdəb!]
+criterion|n.標準；準則|[kraɪ'tɪrɪən]
+crook|vt.vi.n.彎曲|[krʊk]
+crooked|adj.彎曲的；詐欺的|['krʊkɪd]
+crucial|adj.決定性的|['kruʃəl]
+crude|adj.天然的；生的|[krud]
+cruise|vt.vi.n.巡航；航遊|[kruz]
+cruiser|n.遊艇|['kruzɚ]
+crumb|n.麵包屑|[krʌm]
+crumble|vt.vi.粉碎；崩潰|['krʌmb!]
+crust|n.派餅皮；地殼|[krʌst]
+cultivate|vt.培育|['kʌltə͵vet]
+cumulative|adj.累計的|['kjʊmjʊ͵letɪv]
+customary|adj.合乎習俗的|['kʌstəm͵ɛrɪ]
+daffodil|n.黃水仙|['dæfədɪl]
+dandruff|n.頭皮屑|['dændrəf]
+daybreak|n.黎明|['de͵brek]
+deadly|adj.致命的|['dɛdlɪ]
+decent|adj.正派的；體面的|['disnt]
+decisive|adj.決定性的；果決的|[dɪ'saɪsɪv]
+decline|vi.n.下降；婉拒|[dɪ'klaɪn]
+dedicate|vt.奉獻|['dɛdə͵ket]
+dedication|n.奉獻；致力|[͵dɛdə'keʃən]
+deem|v.認為|[dim]
+defect|n.缺點；缺陷|['dɪfɛkt]
+deficiency|n.不足|[dɪ'fɪʃənsɪ]
+degrade|vt.使降級|[dɪ'gred]
+deliberate|adj.深思熟慮的|[dɪ'lɪbərɪt]
+delinquent|adj.有過失的|[dɪ'lɪŋkwənt]
+denounce|vt.譴責|[dɪ'naʊns]
+density|n.密集(度)|['dɛnsətɪ]
+dental|adj.牙齒的|['dɛnt!]
+depict|vt.描畫|[dɪ'pɪkt]
+deprive|vt.剝奪|[dɪ'praɪv]
+deputy|n.adj.副手(的)|['dɛpjətɪ]
+derive|vt.取得 vi.衍生|[dɪ'raɪv]
+descend|vi.vt.下來；走下|[dɪ'sɛnd]
+descendant|n.後裔|[dɪ'sɛndənt]
+descent|n.下降；世系|[dɪ'sɛnt]
+designate|vt.指定|['dɛzɪg͵net]
+destined|adj.命中注定的|['dɛstɪnd]
+detach|vt.分開；分離|[dɪ'tætʃ]
+detain|vt.拘留；扣留|[dɪ'ten]
+deter|vt.威懾住；嚇住|[dɪ'tɝ]
+detergent|n.洗潔劑|[dɪ'tɝdʒənt]
+deteriorate|vi.vt.(使)惡化|[dɪ'tɪrɪə͵ret]
+devalue|vt.降低...的價值|[ˌdɪˈvælju]
+diabetes|n.糖尿病|[͵daɪə'bitiz]
+diagnose|vt.診斷|['daɪəgnoz]
+diagnosis|n.診斷(結果)|[͵daɪəg'nosɪs]
+diagram|n.圖表；圖解|['daɪə͵græm]
+diameter|n.直徑|[daɪ'æmətɚ]
+dictate|vt.vi.口授；命令|['dɪktet]
+dictation|n.聽寫；命令|[dɪk'teʃən]
+dictator|n.獨裁者|['dɪk͵tetɚ]
+differentiate|vt.vi.區別|[͵dɪfə'rɛnʃɪ͵et]
+dilemma|n.進退兩難|[də'lɛmə]
+dimension|n.尺寸；面積|[dɪ'mɛnʃən]
+diminish|vt.vi.減少；失勢|[də'mɪnɪʃ]
+diplomacy|n.外交(手腕)|[dɪ'ploməsɪ]
+diplomatic|adj.外交的|[͵dɪplə'mætɪk]
+directory|n.電話號碼簿|[də'rɛktərɪ]
+disability|n.無能；殘障|[dɪsə'bɪlətɪ]
+disable|vt.使失去能力|[dɪs'eb!]
+disapprove|vt.vi.不贊同|[͵dɪsə'pruv]
+disastrous|adj.災難的|[dɪz'æstrəs]
+discharge|vt.vi.n.排出；釋放|[dɪs'tʃɑrdʒ]
+disciplinary|adj.紀律的|['dɪsəplɪn͵ɛrɪ]
+disclose|vt.揭發；透露|[dɪs'kloz]
+disclosure|n.揭發；透露|[dɪs'kloʒɚ]
+discomfort|n.不舒適|[dɪs'kʌmfɚt]
+discreet|adj.謹慎的|[dɪ'skrit]
+discrimination|n.辨別|[dɪ͵skrɪmə'neʃən]
+disgrace|n.vt.(使…)丟臉|[dɪs'gres]
+disgraceful|adj.不名譽的|[dɪs'gresfəl]
+dismantle|vt.拆卸|[dɪs'mænt!]
+dismay|n.驚慌；沮喪|[dɪs'me]
+dispatch|vt.n.派遣；發送|[dɪ'spætʃ]
+dispensable|adj.非必要的|[dɪ'spɛnsəb!]
+disperse|vt.vi.驅散|[dɪ'spɝs]
+displace|vt.(從原地)移開|[dɪs'ples]
+displease|vt.vi.使人不高興|[dɪs'pliz]
+disposable|adj.可任意處理的|[dɪ'spozəb!]
+disposal|n.處理|[dɪ'spoz!]
+disregard|vt.n.不顧；漠視|[͵dɪsrɪ'gɑrd]
+dissident|adj.n.意見不同的(人)|['dɪsədənt]
+dissolve|vt.vi.分解；解散|[dɪ'zɑlv]
+dissuade|vt.勸阻|[dɪ'swed]
+distort|vt.扭曲；曲解|[dɪs'tɔrt]
+distract|vt.使分心；困擾|[dɪ'strækt]
+distraction|n.分心|[dɪ'strækʃən]
+distrust|vt.n.不信任；懷疑|[dɪs'trʌst]
+disturbance|n.擾亂；打擾|[dɪs'tɝbəns]
+diverse|adj.不同的；多元的|[daɪ'vɝs]
+diversify|vt.vi.使多樣化|[daɪ'vɝsə͵faɪ]
+diversion|n.轉移；娛樂|[daɪ'vɝʒən]
+diversity|n.差異；多樣性|[daɪ'vɝsətɪ]
+divert|vt.vi.轉移；使分心|[daɪ'vɝt]
+doctrine|n.教義；信條|['dɑktrɪn]
+documentary|n.記錄影片|[͵dɑkjə'mɛntərɪ]
+dome|n.圓屋頂|[dom]
+donate|vt.捐贈|['donet]
+donation|n.捐贈(物)|[do'neʃən]
+donor|n.捐贈者|['donɚ]
+doom|n.厄運；毀滅|[dum]
+dosage|n.(藥)劑量；服法|['dosɪdʒ]
+drastic|adj.猛烈的|['dræstɪk]
+drawback|n.缺點；短處|['drɔ͵bæk]
+dreary|adj.陰鬱的|['drɪərɪ]
+drizzle|vi.n.(下)毛毛雨|['drɪz!]
+drought|n.乾旱|[draʊt]
+dual|adj.雙的|['djuəl]
+dubious|adj.半信半疑的|['djubɪəs]
+dynamite|n.炸藥|['daɪnə͵maɪt]
+ebb|n.vi.退潮；衰落|[ɛb]
+eccentric|adj.古怪的|[ɪk'sɛntrɪk]
+ecology|n.生態學|[ɪ'kɑlədʒɪ]
+ecstasy|n.狂喜；迷幻藥|['ɛkstəsɪ]
+edible|adj.可食的|['ɛdəb!]
+editorial|n.社論|[͵ɛdə'tɔrɪəl]
+electron|n.電子|[ɪ'lɛktrɑn]
+eligible|adj.有資格的|['ɛlɪdʒəb!]
+elite|n.精英|[ɪ'lit]
+eloquence|n.雄辯；口才|['ɛləkwəns]
+eloquent|adj.雄辯的|['ɛləkwənt]
+embark|vi.上船；著手|[ɪm'bɑrk]
+emigrant|n.移民|['ɛməgrənt]
+emigrate|vi.移居外國|['ɛmə͵gret]
+emigration|n.移居|[͵ɛmə'greʃən]
+emphatic|adj.強調的|[ɪm'fætɪk]
+enact|vt.制定(法律)|[ɪn'ækt]
+enactment|n.制定(法律)|[ɪn'æktmənt]
+enclosure|n.圍住；圈地|[ɪn'kloʒɚ]
+encyclopedia|n.百科全書|[ɪn͵saɪklə'pidɪə]
+endurance|n.耐久力|[ɪn'djʊrəns]
+enhance|vt.增加|[ɪn'hæns]
+enhancement|n.增加|[ɪn'hænsmənt]
+enlighten|vt.啟發；教導|[ɪn'laɪtn]
+enlightenment|n.啟發；教導|[ɪn'laɪtnmənt]
+enrich|vt.使豐富|[ɪn'rɪtʃ]
+enrichment|n.豐富|[ɪn'rɪtʃmənt]
+epidemic|adj.n.傳染病(的)|[͵ɛpɪ'dɛmɪk]
+episode|n.插曲；一集|['ɛpə͵sod]
+EQ / emotional quotient|phr.情感商數|[ɪ'moʃən! 'kwoʃənt]
+emotional intelligence|phr.情緒智商|[ɪ'moʃən! ɪn'tɛlədʒəns]
+equation|n.方程式；平衡|[ɪ'kweʃən]
+equivalent|adj.n.相等的；相等物|[ɪ'kwɪvələnt]
+erode|vt.侵蝕；磨損|[ɪ'rod]
+eruption|n.爆發|[ɪ'rʌpʃən]
+escalate|vt.使逐步上升|['ɛskə͵let]
+essence|n.本質；精華|['ɛsns]
+eternity|n.永恆；不朽|[ɪ'tɝnətɪ]
+ethical|adj.倫理的|['ɛθɪk!]
+ethnic|adj.種族(上)的|['ɛθnɪk]
+evacuate|vt.撤離；疏散|[ɪ'vækjʊ͵et]
+evolution|n.進化|[͵ɛvə'luʃən]
+evolve|vt.進化；形成|[ɪ'vɑlv]
+excerpt|n.摘錄|[ɪk'sɝpt]
+excessive|adj.過度的|[ɪk'sɛsɪv]
+exclusive|adj.獨佔的；排他的|[ɪk'sklusɪv]
+execution|n.執行；死刑|[͵ɛksɪ'kjuʃən]
+exert|vt.盡(力)；運用|[ɪg'zɝt]
+exotic|adj.異國情調的|[ɛg'zɑtɪk]
+expedition|n.遠征；探險|[͵ɛkspɪ'dɪʃən]
+expel|vt.驅逐；開除|[ɪk'spɛl]
+expertise|n.專門技術|[͵ɛkspɚ'tiz]
+expiration|n.終結；期滿|[͵ɛkspə'reʃən]
+expire|vi.滿期；屆|[ɪk'spaɪr]
+explicit|adj.詳盡的|[ɪk'splɪsɪt]
+exploit|n.功績；功勳|[ɪk'splɔɪt]
+exploration|n.探索|[͵ɛksplə'reʃən]
+exquisite|adj.精緻的|['ɛkskwɪzɪt]
+extract|vt.抽出；提煉|[ɪk'strækt]
+extracurricular|adj.課外的|[͵ɛkstrəkə'rɪkjəlɚ]
+eyesight|n.視力；視野|['aɪ͵saɪt]
+fabulous|adj.驚人的；極好的|['fæbjələs]
+facilitate|vt.促進；幫助|[fə'sɪlə͵tet]
+faction|n.派系；小集團|['fækʃən]
+faculty|n.全體教職員|['fæk!tɪ]
+familiarity|n.熟悉；親近|[fə͵mɪlɪ'ærətɪ]
+famine|n.饑荒|['fæmɪn]
+fascination|n.魅力；迷戀|[͵fæsn'eʃən]
+feasible|adj.可實行的|['fizəb!]
+federation|n.聯邦政府|[͵fɛdə'reʃən]
+feedback|n.反饋；回饋|['fid͵bæk]
+fertility|n.肥沃；繁殖力|[fɝ'tɪlətɪ]
+fidelity|n.忠貞|[fɪ'dɛlətɪ]
+finite|adj.有限的|['faɪnaɪt]
+fireproof|adj.防火的|['faɪr'pruf]
+flare|vi.vt.(火焰)閃耀|[flɛr]
+fleet|n.艦隊|[flit]
+flicker|vi.閃爍；搖曳|['flɪkɚ]
+fling|vt.vi.n.(用力地)扔；擲|[flɪŋ]
+fluid|adj.n.流體的；液體|['fluɪd]
+flutter|vi.(鳥)振翼；飄揚|['flʌtɚ]
+foresee|vt.預見；預知|[for'si]
+formidable|adj.可怕的；難克服的|['fɔrmɪdəb!]
+formulate|vt.使公式化|['fɔrmjə͵let]
+forsake|vt.遺棄；背棄|[fɚ'sek]
+forthcoming|adj.即將到來的|[͵forθ'kʌmɪŋ]
+fortify|vt.加強；支持|['fɔrtə͵faɪ]
+foster|vt.adj.養育；收養的|['fɔstɚ]
+fracture|n.斷裂；骨折|['fræktʃɚ]
+fragile|adj.易碎的；脆弱的|['frædʒəl]
+fragment|n.vt.vi.(成)碎片|['frægmənt]
+frail|adj.虛弱的|[frel]
+fraud|n.詐騙(行為)；騙子|[frɔd]
+freak|n.怪誕的行動；畸形的人|[frik]
+fret|vt.vi.使苦惱；煩躁|[frɛt]
+friction|n.摩擦(力)|['frɪkʃən]
+galaxy|n.銀河|['gæləksɪ]
+generalize|vi.vt.泛論；歸納|['dʒɛnərəl͵aɪz]
+generate|vt.產生；引起|['dʒɛnə͵ret]
+generator|n.發電機|['dʒɛnə͵retɚ]
+genetic|adj.起源的；基因的|[dʒə'nɛtɪk]
+genetics|n.遺傳學|[dʒə'nɛtɪks]
+glamour|n.魅力；妖豔|['glæmɚ]
+glassware|n.玻璃器皿|['glæs͵wɛr]
+glisten|vi.n.閃耀；閃光|['glɪsn]
+gloomy|adj.陰鬱的|['glumɪ]
+GMO|n.基因改造生物|[dʒə'nɛtɪk!ɪ 'mɑdə͵faɪd 'ɔrgən͵ɪzəm]
+graph|n.圖表；圖解|[græf]
+graphic|adj.寫實的；圖解的|['græfɪk]
+grill|n.烤架 vt.vi.烤|[grɪl]
+grocer|n.食品雜貨商|['grosɚ]
+grope|vi.vt.摸索|[grop]
+guerrilla|n.游擊戰(隊員)|[gəˈrɪlə]
+habitat|n.棲息地|['hæbə͵tæt]
+hack|vt.vi.n.劈；砍|[hæk]
+hacker|n.駭客|[hækɚ]
+hail|n.冰雹|[hel]
+harass|vt.使…煩惱；騷擾|['hærəs]
+harassment|n.煩惱；騷擾|['hærəsmənt]
+hazard|n.危害(物)|['hæzɚ]
+hemisphere|n.半球體|['hɛməs͵fɪr]
+hereafter|adv.此後；來世|[͵hɪr'æftɚ]
+heritage|n.遺產|['hɛrətɪdʒ]
+heroin|n.海洛因|['hɛro͵ɪn]
+highlight|vt.照亮 n.最精彩的部分|['haɪ͵laɪt]
+honorary|adj.名譽上的|['ɑnə͵rɛrɪ]
+hormone|n.荷爾蒙|['hɔrmon]
+hospitable|adj.好客的|['hɑspɪtəb!]
+hospitality|n.好客；殷勤|[͵hɑspɪ'tælətɪ]
+hospitalize|vt.使…住院治療|['hɑspɪt!͵aɪz]
+hostility|n.敵意；敵視|[hɑs'tɪlətɪ]
+humanitarian|adj.n.人道主義的|[hju͵mænə'tɛrɪən]
+humiliate|vt.羞辱；使丟臉|[hju'mɪlɪ͵et]
+hunch|n.預感；隆起|[hʌntʃ]
+hurdle|n.vt.跳欄；跨(欄)|['hɝd!]
+hygiene|n.衛生(學)|['haɪdʒin]
+hypocrisy|n.偽善；虛偽|[hɪ'pɑkrəsɪ]
+hypocrite|n.偽君子|['hɪpəkrɪt]
+hysterical|adj.歇斯底里的|[hɪs'tɛrɪk!]
+illuminate|vt.vi.照亮|[ɪ'lumə͵net]
+illusion|n.幻覺；假象|[ɪ'ljuʒən]
+immune|adj.免疫的|[ɪ'mjun]
+imperative|adj.必要的；命令式的|[ɪm'pɛrətɪv]
+implement|n.器具 vt.實施|['ɪmpləmənt]
+implication|n.暗示；牽連|[͵ɪmplɪ'keʃən]
+implicit|adj.含蓄的|[ɪm'plɪsɪt]
+imposing|adj.壯觀的|[ɪm'pozɪŋ]
+imprison|vt.監禁|[ɪm'prɪzn]
+imprisonment|n.監禁|[ɪm'prɪznmənt]
+incentive|n.動機|[ɪn'sɛntɪv]
+incidental|adj.附帶的；偶然的|[͵ɪnsə'dɛnt!]
+incline|vi.vt.傾斜；心裡傾向|[ɪn'klaɪn]
+inclusive|adj.包含的|[ɪn'klusɪv]
+indignation|n.憤慨|[͵ɪndɪg'neʃən]
+inevitable|adj.不可避免的|[ɪn'ɛvətəb!]
+infectious|adj.傳染性的|[ɪn'fɛkʃəs]
+infer|vt.vi.推論；意味著…|[ɪn'fɝ]
+inference|n.推論|['ɪnfərəns]
+ingenious|adj.巧妙的；足智多謀的|[ɪn'dʒinjəs]
+ingenuity|n.足智多謀；巧妙|[͵ɪndʒə'nuətɪ]
+inhabit|vt.棲息於…|[ɪn'hæbɪt]
+inhabitant|n.居民；居住者|[ɪn'hæbətənt]
+inherent|adj.固有的；與生俱來的|[ɪn'hɪrənt]
+initiative|adj.創始的 n.倡議|[ɪ'nɪʃətɪv]
+inject|vt.注射(藥液等)|[ɪn'dʒɛkt]
+injection|n.注射|[ɪn'dʒɛkʃən]
+injustice|n.不正義|[ɪn'dʒʌstɪs]
+innovation|n.改革；創新|[͵ɪnə'veʃən]
+innovative|adj.創新的|['ɪno͵vetɪv]
+inquiry|n.詢問；調查；探索|[ɪn'kwaɪrɪ]
+insight|n.洞察力|['ɪn͵saɪt]
+insistence|n.堅持|[ɪn'sɪstəns]
+installation|n.就任；安裝裝置|[͵ɪnstə'leʃən]
+installment|n.分期付款|[ɪn'stɔlmənt]
+institution|n.制度；機構|[͵ɪnstə'tjuʃən]
+intact|adj.完整無缺的|[ɪn'tækt]
+integrate|vt.vi.使結合；使完整|['ɪntə͵gret]
+integration|n.整合|[͵ɪntə'greʃən]
+integrity|n.正直；完善|[ɪn'tɛgrətɪ]
+intellect|n.智力|['ɪnt!͵ɛkt]
+intersection|n.十字路口|[͵ɪntɚ'sɛkʃən]
+interval|n.間隔；距離|['ɪntɚv!]
+intervene|vi.干涉；打擾|[͵ɪntɚ'vin]
+intervention|n.干涉|[͵ɪntɚ'vɛnʃən]
+intimacy|n.親密；私下|['ɪntəməsɪ]
+intimidate|vt.威嚇；脅迫|[ɪn'tɪmə͵det]
+intrude|vi.vt.侵入|[ɪn'trud]
+intruder|n.侵入者|[ɪn'trudɚ]
+invaluable|adj.無價的|[ɪn'væljəb!]
+inventory|n.存貨清單；庫存|['ɪnvən͵torɪ]
+investigator|n.調查者|[ɪn'vɛstə͵getɚ]
+IQ / intelligence quotient|n.智力商數|[ɪn'tɛlədʒəns 'kwoʃənt]
+ironic|adj.冷嘲的|[aɪ'rɑnɪk]
+irony|n.諷刺|['aɪrənɪ]
+irritable|adj.易怒的|['ɪrətəb!]
+irritate|vt.vi.使惱怒|['ɪrə͵tet]
+irritation|n.惱怒|[͵ɪrə'teʃən]
+joyous|adj.快樂的|['dʒɔɪəs]
+legitimate|adj.合法的；正統的|[lɪ'dʒɪtəmɪt]
+lengthy|adj.長的|['lɛŋθɪ]
+liable|adj.易...的；有義務的|['laɪəb!]
+liberate|vt.解放；使獲自由|['lɪbə͵ret]
+liberation|n.解放|[͵lɪbə'reʃən]
+likewise|adv.同樣地|['laɪk͵waɪz]
+limousine|n.大型豪華轎車|[͵lɪmə'zin]
+liner|n.班機|['laɪnɚ]
+linguist|n.語言學者|['lɪŋgwɪst]
+liter|n.公升|['litɚ]
+literacy|n.識字|['lɪtərəsɪ]
+literal|adj.照字面的|['lɪtərəl]
+literate|adj.能讀寫的；識字的|['lɪtərɪt]
+longevity|n.長壽|[lɑn'dʒɛvətɪ]
+lounge|n.休息室；會客廳|[laʊndʒ]
+lunatic|adj.瘋的|['lunə͵tɪk]
+lure|vt.n.引誘|[lʊr]
+lush|adj.蒼翠繁茂的|[lʌʃ]
+lyric|n.抒情詩；歌詞|['lɪrɪk]
+magnitude|n.重要；強度|['mægnə͵tjud]
+malaria|n.瘧疾|[mə'lɛrɪə]
+manipulate|vt.操作；操弄|[mə'nɪpjə͵let]
+manuscript|n.手稿 adj.手寫的|['mænjə͵skrɪpt]
+mar|n.污點|[mɑr]
+massacre|n.大屠殺|['mæsəkɚ]
+mastery|n.支配；熟練|['mæstərɪ]
+materialism|n.物質主義|[mə'tɪrɪəl͵ɪzəm]
+mattress|n.床墊|['mætrɪs]
+mechanism|n.機械裝置|['mɛkə͵nɪzəm]
+medication|n.藥物|[͵mɛdɪ'keʃən]
+medieval|adj.中世紀的；老式的|[͵mɪdɪ'ivəl]
+meditate|vi.vt.計劃；沈思|['mɛdə͵tet]
+meditation|n.沈思；冥想|[͵mɛdə'teʃən]
+melancholy|n.adj.憂鬱(的)|['mɛlən͵kɑlɪ]
+mellow|adj.成熟的；圓潤的|['mɛlo]
+mentality|n.智力|[mɛn'tælətɪ]
+merchandise|n.商品|['mɝtʃən͵daɪz]
+merge|vt.vi.合併|[mɝdʒ]
+metaphor|n.隱喻|['mɛtəfɚ]
+metropolitan|n.大都市的|[͵mɛtrə'pɑlətn]
+migrate|vi.遷移|['maɪ͵gret]
+migration|n.遷移|[maɪ'greʃən]
+militant|adj.好戰的 n.好戰者|['mɪlətənt]
+miller|n.磨坊主|['mɪlɚ]
+mimic|vt.模仿 n.善模仿的人|['mɪmɪk]
+miniature|adj.小型的|['mɪnɪətʃɚ]
+minimize|vt.使縮到最小|['mɪnə͵maɪz]
+miraculous|adj.奇蹟般的|[mɪ'rækjələs]
+mischievous|adj.惡作劇的|['mɪstʃɪvəs]
+missionary|adj.傳教的 n.傳教士|['mɪʃən͵ɛrɪ]
+mobilize|vt.vi.動員|['mob!͵aɪz]
+modernization|n.現代化|[͵mɑdɚnə'zeʃən]
+mold|n.模型|[mold]
+momentum|n.動力|[mo'mɛntəm]
+monopoly|n.獨佔；壟斷|[mə'nɑp!ɪ]
+monotonous|adj.單調的|[mə'nɑtənəs]
+monotony|n.單調|[mə'nɑtənɪ]
+morale|n.道德；士氣|[mə'ræl]
+morality|n.道德|[mə'rælətɪ]
+motto|n.座右銘|['mɑto]
+mournful|adj.憂傷的|['mornfəl]
+mouthpiece|n.(樂器的)吹口|['maʊθ͵pis]
+spokesperson|n.代言人|['spoks͵pɝsn]
+municipal|adj.市政的|[mju'nɪsəp!]
+mute|adj.沈默的；啞的|[mjut]
+mythology|n.神話|[mɪ'θɑlədʒɪ]
+narrate|vt.vi.敘述；作旁白|[næ'ret]
+narrative|n.記敘文 adj.敘述的|['nærətɪv]
+narrator|n.敘述者；旁白|[næ'retɚ]
+nationalism|n.民族主義|['næʃən!ɪzəm]
+naturalist|n.博物學家|['nætʃərəlɪst]
+naval|adj.海軍的|['nev!]
+navel|n.肚臍|['nev!]
+navigation|n.航海；導航|[͵nævə'geʃən]
+negotiation|n.談判|[nɪ͵goʃɪ'eʃən]
+neon|n.霓虹燈|['ni͵ɑn]
+neutral|adj.中立的；不確定的|['njutrəl]
+newlywed|n.新婚夫婦|['njulɪ͵wɛd]
+newscaster|n.新聞廣播員|['njuz͵kæstɚ]
+nomination|n.提名；任命|[͵nɑmə'neʃən]
+nominee|n.被提名人|[͵nɑmə'ni]
+norm|n.基準；常模|[nɔrm]
+notorious|adj.惡名昭彰的|[no'torɪəs]
+nourish|vt.養育；滋養|['nɝɪʃ]
+nourishment|n.養育；滋養|['nɝɪʃmənt]
+nuisance|n.討厭的人(或事物)|['njusns]
+nurture|n.vt.教養；培育|['nɝtʃɚ]
+nutrient|adj.營養的 n.營養物|['njutrɪənt]
+nutrition|n.營養(學)|[nju'trɪʃən]
+nutritious|adj.有營養的|[nju'trɪʃəs]
+obligation|n.義務；責任|[͵ɑblə'geʃən]
+oblige|vt.迫使；使…感激|[ə'blaɪdʒ]
+obscure|adj.暗的；模糊的 vt.遮掩|[əb'skjʊr]
+offering|n.供奉；祭品|['ɔfərɪŋ]
+offspring|n.子女；後代|['ɔf͵sprɪŋ]
+operational|adj.操作上的|[͵ɑpə'reʃən!]
+opposition|n.反對；對抗|[͵ɑpə'zɪʃən]
+oppress|vt.壓迫|[ə'prɛs]
+oppression|n.壓迫|[ə'prɛʃən]
+option|n.選擇(權)|['ɑpʃən]
+optional|adj.非必要的；可選擇的|['ɑpʃən!]
+ordeal|n.苦難；嚴峻考驗|[ɔr'diəl]
+orderly|adj.整齊的；有秩序的|['ɔrdɚlɪ]
+organism|n.生物；有機體|['ɔrgən͵ɪzəm]
+originality|n.創意；新穎|[ə͵rɪdʒə'nælətɪ]
+originate|vi.發源 vt.引起|[ə'rɪdʒə͵net]
+outbreak|n.爆發|['aʊt͵brek]
+outfit|n.全套服裝/裝備|['aʊt͵fɪt]
+outing|n.郊遊；遠足|['aʊtɪŋ]
+outlaw|n.罪犯 vt.宣布…為不合法|['aʊt͵lɔ]
+outlet|n.出口；銷路|['aʊt͵lɛt]
+outlook|n.觀點；景色|['aʊt͵lʊk]
+outnumber|vt.數量上超過|[aʊt'nʌmbɚ]
+outrage|vt.激怒 n.惡行|['aʊt͵redʒ]
+outrageous|adj.粗暴的,可憎的|[aʊt'redʒəs]
+outright|adj.直率的 adv.徹底地|['aʊt'raɪt]
+outset|n.最初|['aʊt͵sɛt]
+overhead|adj.在頭頂上的|['ovɚ'hɛd]
+overlap|vt.vi.(與...)部分重疊|[͵ovɚ'læp]
+overturn|vt.vi.(使)傾覆|[͵ovɚ'tɝn]
+pact|n.契約|[pækt]
+pamphlet|n.小冊子|['pæmflɪt]
+paralyze|vt.使麻痺,使癱瘓|['pærə͵laɪz]
+parliament|n.議會；國會|['pɑrləmənt]
+pathetic|adj.可憐的|[pə'θɛtɪk]
+patriotic|adj.愛國的|[͵petrɪ'ɑtɪk]
+personal digital assistant|n.個人數位助理(PDA)|['pɝsn! 'dɪdʒɪt! ə'sɪstənt]
+peddle|vt.vi.(沿街)叫賣|['pɛd!]
+pedestrian|n.行人 adj.徒步的|[pə'dɛstrɪən]
+peninsula|n.半島|[pə'nɪnsələ]
+pension|n.退休金；養老金|['pɛnʃən]
+perception|n.感知；觀念|[pɚ'sɛpʃən]
+perseverance|n.堅持不懈；毅力|[͵pɝsə'vɪrəns]
+persevere|vi.堅持不懈|[͵pɝsə'vɪr]
+persistence|n.堅持；固執|[pɚ'sɪstəns]
+persistent|adj.堅持不懈的；固執的|[pɚ'sɪstənt]
+perspective|adj.透視的 n.觀點|[pɚ'spɛktɪv]
+pesticide|n.殺蟲劑|['pɛstɪ͵saɪd]
+petroleum|n.石油|[pə'trolɪəm]
+petty|adj.小的；瑣碎的|['pɛtɪ]
+pharmacist|n.藥劑師|['fɑrməsɪst]
+pharmacy|n.藥房|['fɑrməsɪ]
+phase|n.階段 vt.vi.分階段進行|[fez]
+photographic|adj.攝影的；逼真的|[͵fotə'græfɪk]
+picturesque|adj.圖畫般的|[͵pɪktʃə'rɛsk]
+pierce|vt.vi.刺穿|[pɪrs]
+piety|n.虔誠；孝順|['paɪətɪ]
+pious|adj.虔誠的|['paɪəs]
+pipeline|n.導管；輸油管|['paɪp͵laɪn]
+pitcher|n.投手；水壺|['pɪtʃɚ]
+plight|n.誓約；困境|[plaɪt]
+pneumonia|n.肺炎|[nju'monjə]
+poach|vt.盜獵；水煮|[potʃ]
+poacher|n.盜獵者；蒸鍋|['potʃɚ]
+pollutant|n.污染物 adj.受汙染的|[pə'lutənt]
+ponder|vt.vi.沈思；仔細考慮|['pɑndɚ]
+populate|vt.居住於…|['pɑpjə͵let]
+posture|n.姿勢|['pɑstʃɚ]
+precede|vt.vi.處在(...)之前；優於|[pri'sid]
+precedent|n.先例 adj.在前的|['prɛsədənt]
+precision|n.精確|[prɪ'sɪʒən]
+predecessor|n.前任|['prɛdɪ͵sɛsɚ]
+prediction|n.預言|[prɪ'dɪkʃən]
+preface|n.序言|['prɛfɪs]
+prejudice|n.偏見|['prɛdʒədɪs]
+preliminary|adj.預備的 n.初步|[prɪ'lɪmə͵nɛrɪ]
+premature|adj.過早的；不成熟的|[͵primə'tjʊr]
+premier|n.首相 adj.最早的|['primɪɚ]
+prescribe|vt.規定；開處方|[prɪ'skraɪb]
+prescription|n.規定；處方|[prɪ'skrɪpʃən]
+preside|vi.主持；管轄|[prɪ'zaɪd]
+presidency|n.總裁/總統職位|['prɛzədənsɪ]
+presidential|adj.總裁/總統的|[prɛzə'dɛnʃəl]
+prestige|n.名望|[prɛs'tiʒ]
+presume|vt.vi.擅自(做)；假定|[prɪ'zum]
+preventive|adj.預防的|[prɪ'vɛntɪv]
+productivity|n.生產力|[͵prodʌk'tɪvətɪ]
+proficiency|n.精通|[prə'fɪʃənsɪ]
+profound|adj.深刻的；完全的|[prə'faʊnd]
+progressive|adj.進步的；革新的|[prə'grɛsɪv]
+prohibit|vt.禁止|[prə'hɪbɪt]
+prohibition|n.禁止|[͵proə'bɪʃən]
+projection|n.設計；發射；預測|[prə'dʒɛkʃən]
+prone|adj.易於...的；傾斜的|[pron]
+propaganda|n.宣傳|[prɑpə'gændə]
+propel|vt.推進|[prə'pɛl]
+propeller|n.螺旋槳；推進器|[prə'pɛlɚ]
+prose|n.散文|[proz]
+prosecute|vt.起訴|['prɑsɪ͵kjut]
+prosecution|n.起訴|[͵prɑsɪ'kjuʃən]
+prospective|adj.預期的|[prə'spɛktɪv]
+provincial|adj.省的；地方性的|[prə'vɪnʃəl]
+provoke|vt.對...挑釁；煽動|[prə'vok]
+prowl|vi.vt.潛行(於)|[praʊl]
+punctual|adj.準時的|['pʌŋktʃʊəl]
+purify|vt.淨化；精煉|['pjʊrə͵faɪ]
+purity|n.純淨|['pjʊrətɪ]
+qualification|n.資格|[͵kwɑləfə'keʃən]
+quarrelsome|adj.喜歡爭吵的|['kwɔrəlsəm]
+quench|vt.vi.熄滅 vt.解(渴)|[kwɛntʃ]
+query|n.vt.vi.詢問|['kwɪrɪ]
+questionnaire|n.問卷|[͵kwɛstʃən'ɛr]
+racism|n.種族主義|['resɪzəm]
+radiant|adj.光芒四射的|['redjənt]
+radiate|vi.輻射 vi.vt.散發|['redɪ͵et]
+radiation|n.輻射；發光|[͵redɪ'eʃən]
+radiator|n.散熱器；輻射體|['redɪ͵etɚ]
+radical|adj.根本的；激進的|['rædɪk!]
+raft|n.橡皮艇；木筏|[ræft]
+raid|n.vt.vi.襲擊,劫掠|[red]
+random|n.任意行動 adj.隨機的|['rændəm]
+ransom|n.贖金|['rænsəm]
+rash|n.疹子 adj.輕率的|[ræʃ]
+rational|adj.理性的 n.有理數|['ræʃən!]
+ravage|vt.使荒蕪 vi.n.毀滅|['rævɪdʒ]
+realism|n.現實性|['riəl͵ɪzəm]
+realization|n.領悟；實現|[͵riələ'zeʃən]
+rebellion|n.反叛|[rɪ'bɛljən]
+recession|n.後退；衰退|[rɪ'sɛʃən]
+recipient|n.接受者 adj.接受的|[rɪ'sɪpɪənt]
+recommendation|n.推薦|[͵rɛkəmɛn'deʃən]
+reconcile|vt.使和解|['rɛkənsaɪl]
+recreational|adj.消遣的|[͵rɛkrɪ'eʃən!]
+recruit|vt.vi.徵募 n.新兵|['ri'krut]
+recur|vi.再發生；返回|[rɪ'kɝ]
+redundant|adj.多餘的|[rɪ'dʌndənt]
+refine|vt.vi.提煉；改善|[rɪ'faɪn]
+refinement|n.提煉；改善|[rɪ'faɪnmənt]
+reflective|adj.反射的|[rɪ'flɛktɪv]
+refreshment|n.精力恢復；茶點|[rɪ'frɛʃmənt]
+refund|n.退款 vt.vi.退款|['ri͵fʌnd]
+regardless|adj.不關心(注意)的|[rɪ'gɑrdlɪs]
+regime|n.政體；政權|[rɪ'ʒim]
+rehearsal|n.排練|[rɪ'hɝs!]
+rehearse|vt.vi.排練|[rɪ'hɝs]
+rein|n.韁繩 vt.駕馭|[ren]
+reinforce|vt.強化|[͵riɪn'fɔrs]
+relay|n.接力賽跑 vt.vi.轉播|[rɪ'le]
+relevant|adj.有關的|['rɛləvənt]
+reliance|n.信賴；依靠|[rɪ'laɪəns]
+relish|n.滋味 vt.品嚐|['rɛlɪʃ]
+remainder|n.剩餘物|[rɪ'mendɚ]
+removal|n.移去|[rɪ'muv!]
+renaissance|n.新生；文藝復興|[ 'rɛnə͵sɑns]
+render|vt.使成為；付給|['rɛndɚ]
+renowned|adj.有名的|[rɪ'naʊnd]
+rental|n.租金 adj.供出租的|['rɛnt!]
+repress|vt.vi.抑制|[rɪ'prɛs]
+resemblance|n.相似|[rɪ'zɛmbləns]
+reservoir|n.蓄水庫|['rɛzɚ͵vɔr]
+residential|adj.居住的|[͵rɛzə'dɛnʃəl]
+resistant|adj.抵抗的 n.抵抗者|[rɪ'zɪstənt]
+resolute|adj.堅決的 n.堅定的人|['rɛzə͵lut]
+respective|adj.各自的|[rɪ'spɛktɪv]
+restoration|n.恢復；重建|[͵rɛstə'reʃən]
+restraint|n.抑制|[rɪ'strent]
+retail|n.vt.vi.零售 adj.零售的|['ritel]
+retaliate|vi.vt.報復|[rɪ'tælɪ͵et]
+retrieve|vt.重獲；挽回|[rɪ'triv]
+revelation|n.揭示；顯示；天啟|[rɛv!'eʃən]
+revenue|n.收入|['rɛvə͵nju]
+revival|n.甦醒；重振|[rɪ'vaɪv!]
+rhetoric|n.修辭|['rɛtərɪk]
+rhythmic|adj.有節奏的|['rɪðmɪk]
+ridicule|n.vt.嘲笑|['rɪdɪkjul]
+rigorous|adj.嚴格的|['rɪgərəs]
+riot|n.vi.暴亂；喧鬧|['raɪət]
+rite|n.儀式|[raɪt]
+ritual|n.adj.儀式(的)|['rɪtʃʊəl]
+rivalry|n.競爭|['raɪv!rɪ]
+rotate|vi.vt.(使)旋轉|['rotet]
+rotation|n.旋轉；輪流|[ro'teʃən]
+royalty|n.王位；皇族|['rɔɪəltɪ]
+ruby|n.紅寶石|['rubɪ]
+safeguard|vt.n.保護|['sef͵gɑrd]
+saloon|n.交誼廳；酒吧|[sə'lun]
+salvation|n.拯救|[sæl'veʃən]
+sanction|n.vt.認可；制裁|['sæŋkʃən]
+sanctuary|n.教堂；庇護所|['sæŋktʃʊ͵ɛrɪ]
+sane|adj.神志正常的；健全的|[sen]
+sanitation|n.公共衛生|[͵sænə'teʃən]
+scenic|adj.風景的；戲劇的|['sinɪk]
+scope|n.範圍；領域|[skop]
+script|n.筆跡；腳本|[skrɪpt]
+sector|n.扇形；部分|['sɛktɚ]
+seduce|vt.誘惑|[sɪ'djus]
+selective|adj.有選擇性的|[sə'lɛktɪv]
+seminar|n.研討班；專題研討會|['sɛmə͵nɑr]
+senator|n.參議員|['sɛnətɚ]
+sentimental|adj.多情的|[͵sɛntə'mɛnt!]
+sequence|n.連續；後果|['sikwəns]
+serene|adj.安詳的；平靜的|[sə'rin]
+serenity|n.晴朗；平靜|[sə'rɛnətɪ]
+serving|n.服務；(食物)一份|['sɝvɪŋ]
+session|n.會議；開庭；講習班|['sɛʃən]
+setback|n.挫折|['sɛt͵bæk]
+sewer|n.污水管；下水道|['suɚ]
+shed|n.棚 vt.vi.流出|[ʃɛd]
+sheer|adj.全然的 adv.十足地|[ʃɪr]
+shilling|n.先令|['ʃɪlɪŋ]
+shoplift|vi.vt.在商店內順手牽羊|['ʃɑp͵lɪft]
+shrewd|adj.精明的；狡猾的|[ʃrud]
+shun|vt.躲開|[ʃʌn]
+siege|n.vt.圍攻|[sidʒ]
+signify|vt.表示；意味著|['sɪgnə͵faɪ]
+silicon|n.矽|['sɪlɪkən]
+simplicity|n.簡單；樸素|[sɪm'plɪsətɪ]
+simplify|vt.簡化|['sɪmplə͵faɪ]
+simultaneous|adj.同步的|[͵saɪm!'tenɪəs]
+skeptical|adj.懷疑的|['skɛptɪk!]
+skim|vt.vi.掠過；瀏覽|[skɪm]
+slang|n.俚語|[slæŋ]
+slash|vt.vi.砍；鞭打 n.砍痕|[slæʃ]
+slavery|n.奴隸身分；奴役|['slevərɪ]
+slot|n.狹縫；投幣口|[slɑt]
+slum|n.貧民窟|[slʌm]
+smack|vt.vi.n摑巴掌；響吻|[smæk]
+smallpox|n.天花|['smɔl͵pɑks]
+smother|vt.vi.(使)窒息|['smʌðɚ]
+smuggle|vt.vi.走私|['smʌg!]
+snare|n.圈套 vt.捕捉|[snɛr]
+sneaky|adj.鬼鬼祟祟的|['snikɪ]
+sneer|vi.vt.嘲諷,冷笑|[snɪr]
+soar|vi.n.高飛；暴漲|[sor]
+sociable|adj.好交際的|['soʃəb!]
+socialism|n.社會主義|['soʃəl͵ɪzəm]
+socialist|n.社會主義者|['soʃəlɪst]
+socialize|vt.vi.交際；社會化|['soʃə͵laɪz]
+sociology|n.社會學|[͵soʃɪ'ɑlədʒɪ]
+sodium|n.鈉|['sodɪəm]
+solidarity|n.團結|[͵sɑlə'dærətɪ]
+solitude|n.孤獨|['sɑlə͵tjud]
+soothe|vt.vi.安慰；緩和|[suð]
+sophisticated|adj.世故的；精緻的|[sə'fɪstɪ͵ketɪd]
+sovereignty|n.君權；主權|['sɑvrɪntɪ]
+spacious|adj.寬敞的|['speʃəs]
+span|n.跨度；一段時間|[spæn]
+specialize|vi.專攻 vt.使專門化|['spɛʃəl͵aɪz]
+specialty|n.特產；專業|['spɛʃəltɪ]
+specify|vt.具體指明|['spɛsə͵faɪ]
+spectacular|adj.壯觀的|[spɛk'tækjəlɚ]
+spectrum|n.光譜|['spɛktrəm]
+speculate|vi.思索 vt.推測|['spɛkjə͵let]
+sphere|n.球體；領域|[sfɪr]
+spike|n.大釘；釘鞋|[spaɪk]
+spiral|n.螺旋 adj.螺旋(形)的|['spaɪrəl]
+spire|n.尖塔 vt.給…裝尖頂|[spaɪr]
+spokesperson|n.發言人|['spoks͵pɝsn]
+sponsor|n.發起者；贊助者|['spɑnsɚ]
+spontaneous|adj.自發的|[spɑn'tenɪəs]
+spouse|n.配偶|[spaʊz]
+sprawl|vi.vt.伸開四肢躺；蔓生|[sprɔl]
+squad|n.小隊|[skwɑd]
+squash|vt.vi.(把…)壓扁(壓碎)|[skwɑʃ]
+stability|n.穩定(性)|[stə'bɪlətɪ]
+stabilize|vt.vi.(使)穩定|['steb!͵aɪz]
+stalk|vt.vi.n.悄悄追蹤|[stɔk]
+stammer|vi.vt.n.口吃|['stæmɚ]
+staple|n.主食；訂書釘 adj.主要的|['step!]
+stapler|n.釘書機|['steplɚ]
+starch|n.澱粉|[stɑrtʃ]
+starvation|n.飢餓|[stɑr'veʃən]
+stationary|adj.不動的|['steʃən͵ɛrɪ]
+stationery|n.文具|['steʃən͵ɛrɪ]
+stature|n.身高；身材；高度境界|['stætʃɚ]
+steamer|n.汽船；蒸鍋；蒸汽機|['stimɚ]
+stimulate|vt.vi.刺激；促使|['stɪmjə͵let]
+stimulation|n.刺激；鼓舞|[͵stɪmjə'leʃən]
+stimulus|n.刺激(品)；興奮劑|['stɪmjələs]
+stock|n.存貨；股票|[stɑk]
+strangle|vt.vi.勒死；抑制|['stræŋg!]
+strategic|adj.戰略的|[strə'tidʒɪk]
+stunt|n.絕技 vt.阻礙|[stʌnt]
+subjective|adj.主觀的；個人的|[səb'dʒɛktɪv]
+subordinate|adj.下級的；隸屬的|[sə'bɔrdnɪt]
+subscribe|vt.vi.認捐；訂閱|[səb'skraɪb]
+subscription|n.認捐；訂閱|[səb'skrɪpʃən]
+subsequent|adj.隨後的|['sʌbsɪ͵kwɛnt]
+substitution|n.代替(物)|[͵sʌbstə'tjuʃən]
+subtle|adj.微妙的；隱約的|['sʌt!]
+suburban|adj.郊區的|[sə'bɝbən]
+succession|n.連續；繼任|[sək'sɛʃən]
+successive|adj.連續的；後繼的|[sək'sɛsɪv]
+successor|n.繼承人；接替的事物|[sək'sɛsɚ]
+suffocate|vt.vi.(使)窒息|['sʌfə͵ket]
+suite|n.套房；隨員；套(組)|[swit]
+superb|adj.堂皇的；極好的|[sʊ'pɝb]
+superiority|n.優越|[sə͵pɪrɪ'ɔrətɪ]
+supersonic|adj.n.超音波(的)|[͵supɚ'sɑnɪk]
+superstitious|adj.迷信的|[͵supɚ'stɪʃəs]
+supervision|n.監督|[͵supɚ'vɪʒən]
+supplement|n.增補；補給品|['sʌpləmənt]
+surpass|vt.勝過|[sɚ'pæs]
+surplus|n.adj.過剩(的)|['sɝpləs]
+suspense|n.懸而不決；暫停|[sə'spɛns]
+suspension|n.懸吊；暫停|[sə'spɛnʃən]
+swap|vt.vi.n.交換|[swɑp]
+symbolic|adj.象徵的|[sɪm'bɑlɪk]
+symbolize|vt.vi.象徵|['sɪmb!͵aɪz]
+symmetry|n.對稱(性)|['sɪmɪtrɪ]
+symptom|n.症狀|['sɪmptəm]
+synonym|n.同義字|['sɪnə͵nɪm]
+synthetic|adj.合成的|[sɪn'θɛtɪk]
+tact|n.老練；機智；圓滑|[tækt]
+tactic|n.戰術；策略|['tæktɪk]
+tariff|n.關稅；稅率|['tærɪf]
+tedious|adj.冗長乏味的|['tidɪəs]
+temperament|n.氣質；性情|['tɛmprəmənt]
+tempest|n.暴風雨；騷動|['tɛmpɪst]
+terminate|vt.vi.(使)終止|['tɝmə͵net]
+textile|n.紡織品 adj.紡織的|['tɛkstaɪl]
+texture|n.質地；構造|['tɛkstʃɚ]
+theatrical|adj.戲劇的；誇張的|[θɪ'ætrɪk!]
+theft|n.偷竊|[θɛft]
+theoretical|adj.理論的|[͵θiə'rɛtɪk!]
+therapist|n.特定療法技師|['θɛrəpɪst]
+therapy|n.治療；療法|['θɛrəpɪ]
+thereafter|adv.之後|[ðɛr'æftɚ]
+thereby|adv.由此；從而|[ðɛr'baɪ]
+thermometer|n.溫度計|[θɚ'mɑmətɚ]
+threshold|n.門檻；開端|['θrɛʃhold]
+thrift|n.節儉|[θrɪft]
+thrifty|adj.節儉的；茂盛的|['θrɪftɪ]
+thrive|vi.興旺；繁榮|[θraɪv]
+throb|vi.n.跳動；悸動|[θrɑb]
+toll|n.通行費 vt.vi徵稅|[tol]
+topple|vt.vi.(使) 倒塌|['tɑp!]
+tornado|n.龍捲風|[tɔr'nedo]
+trait|n.特徵；少許|[tret]
+tranquil|adj.平靜的|['træŋkwɪl]
+tranquilizer|n.鎮定劑|['træŋkwɪ͵laɪzɚ]
+transaction|n.交易；辦理|[træn'zækʃən]
+transcript|n.抄本；成績單|['træn͵skrɪpt]
+transformation|n.轉變；變形|[͵trænsfɚ'meʃən]
+transistor|n.電晶體|[træn'zɪstɚ]
+transit|n.vt.vi.運輸；過渡|['trænsɪt]
+transition|n.過渡；轉變|[træn'zɪʃən]
+transmission|n.傳輸；傳送|[træns'mɪʃən]
+transmit|vt.vi.傳送；發報|[træns'mɪt]
+transplant|vt.vi.移植；(使)移居|[træns'plænt]
+trauma|n.創傷|['trɔmə]
+tread|vi.vt.踩；踏|[trɛd]
+treason|n.叛國罪|['trizn]
+trek|n.移居；旅行 vi.艱苦跋涉|[trɛk]
+tremor|n.顫抖；震動|['trɛmɚ]
+trespass|vi.n.擅自進入|['trɛspəs]
+trigger|n.扳機 vt.扣扳機|['trɪgɚ]
+triumphant|adj.勝利的|[traɪ'ʌmfənt]
+trivial|adj.瑣細的；不重要的|['trɪvɪəl]
+trophy|n.戰利品；獎杯|['trofɪ]
+tropic|n.回歸線；熱帶|[ 'trɑpɪk]
+truant|n.逃學者 adj.逃學的|['truənt]
+truce|n.停戰|[trus]
+tuberculosis|n.結核病|[tju͵bɝkjə'losɪs]
+tumor|n.腫瘤|['tjumɚ]
+turmoil|n.騷動；混亂|['tɝmɔɪl]
+twilight|n.薄暮 adj.昏暗的|['twaɪ͵laɪt]
+tyranny|n.暴政；專橫|['tɪrənɪ]
+ulcer|n.潰瘍；弊病|['ʌlsɚ]
+ultimate|adj.最終的；極限的|['ʌltəmɪt]
+unanimous|adj.一致同意的|[jʊ'nænəməs]
+uncover|vt.揭露|[ʌn'kʌvɚ]
+underestimate|vt.低估|['ʌndɚ'ɛstə͵met]
+undergo|vt.經歷；接受(治療等)|[͵ʌndɚ'go]
+undermine|vt.暗中破壞|[͵ʌndɚ'maɪn]
+undertake|vt.進行；承擔|[͵ʌndɚ'tek]
+undo|vt.解開；取消；破壞|[ʌn'du]
+unemployment|n.失業|[͵ʌnɪm'plɔɪmənt]
+unfold|vt.vi.展開|[ʌn'fold]
+unify|vt.vi.統一|['junə͵faɪ]
+unlock|vt.vi.開…的鎖；解開|[ʌn'lɑk]
+unpack|vt.vi.打開包裹；卸下|[ʌn'pæk]
+upbringing|n.養育；教養|['ʌp͵brɪŋɪŋ]
+upgrade|n.vt.升級 adv.上坡|['ʌp'gred]
+uphold|vt.舉起；支撐；維持|[ʌp'hold]
+uranium|n.鈾|[jʊ'renɪəm]
+urgency|n.緊急；急事|['ɝdʒənsɪ]
+urine|n.尿|['jʊrɪn]
+usher|n.引座員 vt.vi.招待|[ 'ʌʃɚ]
+utensil|n.器皿；厨房用具|[ju'tɛns!]
+utility|n.效用；公用事業|[ju'tɪlətɪ]
+utilize|vt.利用|['jut!͵aɪz]
+utmost|adj.極度的 n.極度|['ʌt͵most]
+vaccine|adj.疫苗的 n.疫苗|['væksin]
+valiant|adj.英勇的 n.勇士|['væljənt]
+valid|adj.有根據的；有效的|['vælɪd]
+validity|n.正當；有效性|[və'lɪdətɪ]
+vanilla|n.香草 adj.普通的|[və'nɪlə]
+variable|adj.多變的 n.可變因素|['vɛrɪəb!]
+variation|n.變動；差異|[͵vɛrɪ'eʃən]
+vend|vi.vt.出售|[vɛnd]
+vendor|n.小販；自動販賣機|['vɛndɚ]
+verge|n.邊緣 vi.vt.處在(…)邊緣|[vɝdʒ]
+versatile|adj.多才多藝的|['vɝsət!]
+version|n.版本；說法|['vɝʒən]
+veteran|n.老兵；老手|['vɛtərə]
+veterinarian|n.獸醫|[͵vɛtərə'nɛrɪən]
+vibration|n.顫動；共鳴|[vaɪ'breʃən]
+vice|n.惡 adj.副的|[vaɪs]
+vicious|adj.邪惡的；惡性的|['vɪʃəs]
+victimize|vt.使受害；欺騙|['vɪktɪ͵maɪz]
+victor|n.勝利者|['vɪktɚ]
+victorious|adj.勝利的|[vɪk'torɪəs]
+villa|n.別墅|['vɪlə]
+vineyard|n.葡萄園|['vɪnjɚd]
+virtual|adj.實際上的；虛擬的|['vɝtʃʊəl]
+visualize|vt.vi.使視覺化；想像|['vɪʒʊə͵laɪz]
+vitality|n.活力；生命力|[vaɪ'tælətɪ]
+vocal|adj.聲音的；歌唱的|['vok!]
+vocation|n.行業；傾向|[vo'keʃən]
+vocational|adj.職業的|[vo'keʃən!]
+vogue|n.流行(物)|[vog]
+vomit|vt.vi.n.嘔吐|['vɑmɪt]
+vulgar|adj.粗俗的；通俗的|['vʌlgɚ]
+vulnerable|adj.易受傷的|['vʌlnərəb!]
+wardrobe|n.衣櫥|['wɔrd͵rob]
+warfare|n.戰爭|['wɔr͵fɛr]
+warranty|n.保證書；擔保|['wɔrəntɪ]
+waterproof|adj.防水的|['wɑtɚ͵pruf]
+whatsoever|pron.adv.adj.任何事物|[ˌwɑtsoˈɛvɚ]
+windshield|n.擋風玻璃|['wɪnd͵ʃild]
+withstand|vt.vi.反抗；禁得起|[wɪð'stænd]
+witty|adj.機智的；說話風趣的|['wɪtɪ]
+woo|vt.vi.追求；求愛；爭取|[wu]
+wrench|vt.vi.n.猛扭；扭傷|[rɛntʃ]
+wrestle|vt.摔(角)；與…搏鬥|['rɛs!]
+xerox|n.影印機(商標名)|['zɪrɑks]
+yearn|vi.思念；渴望|[jɝn]
+zeal|n.熱心；熱誠|[zil]
+    `;
+
+    // Global Variables
+    let fullData = [];
+    let groupedData = {};
+    let currentFilterLetter = '';
+    let currentLevel = 1;
+    let currentLevelData = [];
+    let quizQueue = []; // Queue for Quiz mode (shuffled)
+    let currentIndex = 0;
+    let currentMode = 'learn';
+    let showSyllables = false;
+    let isSolved = false;
+    let voices = [];
+    let selectedVoice = null;
+    let synth = window.speechSynthesis;
+    let autoNextTimer = null;
+
+    // Initialization
+    window.onload = function() {
+        try {
+            fullData = parseVocabulary(rawVocabulary);
+            groupedData = groupDataByLetter(fullData);
+            renderAlphaButtons();
+            initVoices();
+            // Default start
+            selectAlpha('A');
+        } catch (e) {
+            document.getElementById('statusInfo').innerHTML = `<span style="color:red">Error: ${e.message}</span>`;
+        }
+    };
+
+    // Parsers
+    function parseVocabulary(text) {
+        return text.trim().split('\n').map(line => {
+            if (!line.trim()) return null;
+            const parts = line.split('|');
+            if (parts.length < 2) return null;
+            const w = parts[0].trim();
+            const m = parts[1] ? parts[1].trim() : "";
+            const p = parts[2] ? parts[2].trim() : "";
+            // Split syllables if possible (simple heuristic)
+            const s = w.match(/[^aeiouy]*[aeiouy]+(?:[^aeiouy]*$|[^aeiouy](?=[^aeiouy]))?/gi) || [w];
+            return { w, m, p, s }; 
+        }).filter(item => item !== null);
+    }
+
+    function groupDataByLetter(data) {
+        const groups = {};
+        data.forEach(item => {
+            const firstChar = item.w.charAt(0).toUpperCase();
+            if (/[A-Z]/.test(firstChar)) {
+                if (!groups[firstChar]) groups[firstChar] = [];
+                groups[firstChar].push(item);
+            }
+        });
+        return groups;
+    }
+
+    // UI Logic
+    function renderAlphaButtons() {
+        const container = document.getElementById('alphaNav');
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+        alphabet.forEach(letter => {
+            const btn = document.createElement('button');
+            btn.className = 'alpha-btn';
+            btn.textContent = letter;
+            if (!groupedData[letter]) btn.disabled = true;
+            else btn.onclick = () => selectAlpha(letter);
+            container.appendChild(btn);
+        });
+    }
+
+    function selectAlpha(letter) {
+        document.querySelectorAll('.alpha-btn').forEach(b => b.classList.remove('active'));
+        const activeBtn = Array.from(document.querySelectorAll('.alpha-btn')).find(b => b.textContent === letter);
+        if(activeBtn) activeBtn.classList.add('active');
+
+        currentFilterLetter = letter;
+        populateLevelSelect(letter);
+        loadLevel(1);
+        setMode('learn');
+    }
+
+    function populateLevelSelect(letter) {
+        const select = document.getElementById('levelSelect');
+        select.innerHTML = '';
+        const words = groupedData[letter] || [];
+        const chunkSize = 20;
+        const totalLevels = Math.ceil(words.length / chunkSize);
+        
+        for (let i = 1; i <= totalLevels; i++) {
+            const start = (i - 1) * chunkSize + 1;
+            const end = Math.min(i * chunkSize, words.length);
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `Level ${i} (${letter}${start} - ${letter}${end})`;
+            select.appendChild(option);
+        }
+    }
+
+    function changeLevel() {
+        const select = document.getElementById('levelSelect');
+        loadLevel(parseInt(select.value));
+    }
+
+    function loadLevel(level) {
+        const words = groupedData[currentFilterLetter] || [];
+        const chunkSize = 20;
+        const start = (level - 1) * chunkSize;
+        const end = start + chunkSize;
+        currentLevelData = words.slice(start, end);
+        currentLevel = level;
+        
+        // Reset state
+        currentIndex = 0;
+        isSolved = false;
+        clearTimeout(autoNextTimer);
+        
+        // If in Quiz mode, reload shuffle
+        if (currentMode === 'quiz') {
+            quizQueue = [...currentLevelData].sort(() => Math.random() - 0.5);
+        }
+
+        updateStatusInfo();
+        render();
+        if(currentMode === 'learn') setTimeout(() => speak(currentLevelData[currentIndex].w), 500);
+    }
+
+    function updateStatusInfo() {
+        const info = document.getElementById('statusInfo');
+        if (currentLevelData.length > 0) {
+            info.textContent = `📚 ${currentFilterLetter} - Level ${currentLevel} (${currentLevelData.length} 字)`;
+        }
+    }
+
+    // TTS
+    function initVoices(manual = false) {
+        const voiceSelect = document.getElementById('voiceSelect');
+        const load = () => {
+            voices = synth.getVoices();
+            if (voices.length > 0) {
+                voices.sort((a, b) => {
+                    if(a.name.includes('Google') && a.lang.includes('en-US')) return -1;
+                    if(a.lang.includes('en') && !b.lang.includes('en')) return -1;
+                    return 0;
+                });
+                voiceSelect.innerHTML = '';
+                voices.forEach((v, i) => {
+                    const op = document.createElement('option');
+                    op.textContent = v.name;
+                    op.value = i;
+                    if (v.lang === 'en-US' && !selectedVoice) selectedVoice = v;
+                    voiceSelect.appendChild(op);
+                });
+                if (!selectedVoice && voices.length > 0) selectedVoice = voices[0];
+                voiceSelect.selectedIndex = voices.indexOf(selectedVoice);
+                if (manual) speak("Voices loaded");
+            }
+        };
+        load();
+        if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = load;
+        setTimeout(load, 1000);
+    }
+
+    function changeVoice() {
+        const select = document.getElementById('voiceSelect');
+        selectedVoice = voices[select.value];
+        speak("Voice changed");
+    }
+
+    function speak(text) {
+        if (synth.speaking) synth.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        if (selectedVoice) u.voice = selectedVoice;
+        u.rate = 0.8; 
+        synth.speak(u);
+    }
+
+    // Game Logic
+    function setMode(mode) {
+        currentMode = mode;
+        currentIndex = 0; // Reset index to start
+        
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        const btnMap = {'learn':0, 'block':1, 'dictate':2, 'quiz':3};
+        if(document.querySelectorAll('.tab-btn')[btnMap[mode]]) {
+            document.querySelectorAll('.tab-btn')[btnMap[mode]].classList.add('active');
+        }
+        
+        isSolved = false;
+        clearTimeout(autoNextTimer);
+
+        // Prepare quiz queue if needed
+        if (mode === 'quiz') {
+            quizQueue = [...currentLevelData].sort(() => Math.random() - 0.5);
+        }
+
+        render();
+        // Speak if in Learn, Block, or Dictate mode
+        if(['learn', 'block', 'dictate'].includes(mode)) {
+            setTimeout(() => speak(currentLevelData[currentIndex].w), 300);
+        }
+    }
+
+    function prevWord() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            isSolved = false;
+            clearTimeout(autoNextTimer);
+            render();
+            // Speak if in Learn, Block, or Dictate mode
+            if(['learn', 'block', 'dictate'].includes(currentMode)) {
+                setTimeout(() => speak(currentLevelData[currentIndex].w), 300);
+            }
+        }
+    }
+
+    function nextWord() {
+        // Use different data source based on mode
+        const dataLength = (currentMode === 'quiz') ? quizQueue.length : currentLevelData.length;
+        const dataItem = (currentMode === 'quiz') ? quizQueue[currentIndex] : currentLevelData[currentIndex];
+
+        if (currentIndex < dataLength - 1) {
+            currentIndex++;
+            isSolved = false;
+            clearTimeout(autoNextTimer);
+            render();
+            
+            // Speak if in Learn, Block, or Dictate mode
+            if(['learn', 'block', 'dictate'].includes(currentMode)) {
+                setTimeout(() => speak(currentLevelData[currentIndex].w), 300);
+            }
+        } else {
+            speak("Level Complete!");
+            alert("恭喜！本關卡已完成！");
+        }
+    }
+
+    function render() {
+        const card = document.getElementById('cardArea');
+        card.innerHTML = '';
+        if (!currentLevelData.length) return;
+        
+        // Determine current item based on mode
+        let item;
+        let totalItems;
+        if (currentMode === 'quiz') {
+            if (quizQueue.length === 0) quizQueue = [...currentLevelData];
+            item = quizQueue[currentIndex];
+            totalItems = quizQueue.length;
+        } else {
+            item = currentLevelData[currentIndex];
+            totalItems = currentLevelData.length;
+        }
+        
+        // Setup Nav Buttons
+        const prevBtn = document.querySelector('.nav-btn.prev');
+        // Disable previous in quiz mode to enforce forward progress? Or allow review?
+        // Usually quizzes allow review, but "auto jump next" suggests flow. Let's keep it standard.
+        prevBtn.disabled = (currentIndex === 0);
+        prevBtn.style.opacity = (currentIndex === 0) ? 0.3 : 1;
+        
+        const nextBtn = document.querySelector('.nav-btn.next');
+        if (currentMode === 'learn') {
+             nextBtn.disabled = false;
+        } else {
+             nextBtn.disabled = !isSolved;
+        }
+
+        if (currentMode === 'learn') renderLearn(item, card);
+        else if (currentMode === 'block') renderBlock(item, card);
+        else if (currentMode === 'dictate') renderDictate(item, card);
+        else if (currentMode === 'quiz') renderQuiz(item, card);
+    }
+
+    function renderLearn(item, container) {
+        const info = document.createElement('div');
+        info.className = 'chinese-meaning';
+        info.textContent = `${currentIndex + 1}. ${item.m}`;
+        container.appendChild(info);
+
+        if (item.p) {
+            const phon = document.createElement('div');
+            phon.className = 'phonetic';
+            phon.textContent = item.p;
+            container.appendChild(phon);
+        }
+
+        const spk = document.createElement('button');
+        spk.className = 'btn btn-primary';
+        spk.innerHTML = '🔊 發音';
+        spk.onclick = () => speak(item.w);
+        container.appendChild(spk);
+
+        const wordDiv = document.createElement('div');
+        wordDiv.className = 'word-display';
+        
+        let effectiveLen = item.w.length;
+        if (showSyllables) {
+            effectiveLen += (item.s.length - 1) * 0.5; 
+        }
+        
+        if (effectiveLen > 14) {
+             wordDiv.style.fontSize = 'min(5.5vw, 1.8rem)'; 
+        } else if (effectiveLen > 9) {
+             wordDiv.style.fontSize = 'min(8vw, 2.8rem)'; 
+        } else {
+             wordDiv.style.fontSize = 'min(12vw, 3.8rem)'; 
+        }
+
+        const parts = showSyllables ? item.s : [item.w];
+        parts.forEach((part, idx) => {
+            const span = document.createElement('span');
+            let html = '';
+            for (let c of part) {
+                if (/[aeiouAEIOU]/.test(c)) html += `<span class="vowel">${c}</span>`;
+                else if (/[a-zA-Z]/.test(c)) html += `<span class="consonant">${c}</span>`;
+                else html += c;
+            }
+            span.innerHTML = html;
+            wordDiv.appendChild(span);
+            if (showSyllables && idx < parts.length - 1) {
+                const sep = document.createElement('span');
+                sep.textContent = '·'; sep.className = 'syllable-separator';
+                wordDiv.appendChild(sep);
+            }
+        });
+        container.appendChild(wordDiv);
+
+        const toggle = document.createElement('button');
+        toggle.className = 'btn btn-accent';
+        toggle.textContent = showSyllables ? '隱藏音節' : '顯示音節';
+        toggle.onclick = () => { showSyllables = !showSyllables; render(); };
+        container.appendChild(toggle);
+    }
+
+    function renderBlock(item, container) {
+        const info = document.createElement('div');
+        info.className = 'chinese-meaning';
+        info.textContent = `${currentIndex + 1}. ${item.m}`;
+        container.appendChild(info);
+
+        const spk = document.createElement('button');
+        spk.className = 'btn btn-primary';
+        spk.innerHTML = '🔊 聽單字';
+        spk.onclick = () => speak(item.w);
+        container.appendChild(spk);
+
+        const ansArea = document.createElement('div');
+        ansArea.className = 'answer-area';
+        container.appendChild(ansArea);
+
+        const fb = document.createElement('div');
+        fb.className = 'feedback-msg';
+        container.appendChild(fb);
+
+        let cleanWord = item.w.replace(/[^a-zA-Z]/g, '');
+        let letters = item.w.split(''); 
+        let shuffled = [...letters];
+        if (shuffled.length > 1) {
+            let limit = 10;
+            while (shuffled.join('') === item.w && limit > 0) {
+                shuffled.sort(() => Math.random() - 0.5);
+                limit--;
+            }
+        }
+
+        const pool = document.createElement('div');
+        pool.className = 'letter-pool';
+        let userAns = [];
+
+        shuffled.forEach((char, idx) => {
+            const btn = document.createElement('div');
+            btn.className = 'block-btn';
+            btn.textContent = char;
+            btn.id = `pool-${idx}`;
+            
+            btn.onclick = function() {
+                if (btn.classList.contains('used') || isSolved) return;
+                
+                const ansBtn = document.createElement('div');
+                ansBtn.className = 'block-btn';
+                ansBtn.textContent = char;
+                ansBtn.style.borderColor = 'var(--primary-color)';
+                
+                ansBtn.onclick = function() {
+                    if(isSolved) return; 
+                    ansArea.removeChild(ansBtn);
+                    btn.classList.remove('used');
+                    userAns = userAns.filter(u => u.id !== `pool-${idx}`);
+                    fb.textContent = '';
+                };
+
+                ansArea.appendChild(ansBtn);
+                btn.classList.add('used');
+                userAns.push({ char: char, id: `pool-${idx}` });
+                fb.textContent = '';
+
+                const currentString = userAns.map(u => u.char).join('');
+                if (currentString.length === item.w.length) {
+                    if (currentString === item.w) {
+                        isSolved = true; 
+                        fb.textContent = "✅ 答對了！";
+                        fb.style.color = "var(--success)";
+                        ansBtn.parentElement.style.backgroundColor = "#e8f5e9";
+                        speak("Correct");
+                        
+                        document.querySelector('.nav-btn.next').disabled = false;
+                        
+                        autoNextTimer = setTimeout(() => {
+                            if(currentIndex < quizQueue.length - 1 || currentMode !== 'quiz') nextWord(); // Check mode
+                        }, 2000);
+                    } else {
+                        fb.textContent = `❌ 錯誤！正確答案是: ${item.w}`;
+                        fb.style.color = "var(--error)";
+                        speak("Try again");
+                        ansArea.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(0)' }], { duration: 200 });
+                        
+                        setTimeout(() => {
+                            ansArea.innerHTML = '';
+                            userAns = [];
+                            Array.from(pool.children).forEach(child => child.classList.remove('used'));
+                            fb.textContent = "";
+                        }, 3000);
+                    }
+                }
+            };
+            pool.appendChild(btn);
+        });
+        container.appendChild(pool);
+    }
+
+    function renderDictate(item, container) {
+        const info = document.createElement('div');
+        info.className = 'chinese-meaning';
+        info.textContent = `${currentIndex + 1}. ${item.m}`;
+        container.appendChild(info);
+
+        const spk = document.createElement('button');
+        spk.className = 'btn btn-primary';
+        spk.innerHTML = '🔊 播放聲音';
+        spk.onclick = () => speak(item.w);
+        container.appendChild(spk);
+
+        // --- HINT SECTION START ---
+        const hint = document.createElement('div');
+        hint.className = 'dictate-hint';
+        let hintText = "";
+        const w = item.w;
+        
+        if (w.length > 2) {
+            // Remove extra spaces in middle part to prevent wrapping on mobile
+            // Use CSS letter-spacing for visual separation
+            hintText = w.charAt(0) + " " + "_".repeat(w.length - 2) + " " + w.charAt(w.length - 1);
+        } else if (w.length === 2) {
+            hintText = w.charAt(0) + " _";
+        } else {
+            hintText = "_";
+        }
+        hint.textContent = hintText;
+        container.appendChild(hint);
+        // --- HINT SECTION END ---
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'input-box';
+        input.placeholder = '在此輸入單字...';
+        input.autocomplete = 'off';
+        
+        input.onkeyup = function(e) {
+            if (e.key === 'Enter' && !isSolved) {
+                checkAns();
+            }
+        };
+        container.appendChild(input);
+
+        const fb = document.createElement('div');
+        fb.className = 'feedback-msg';
+        container.appendChild(fb);
+
+        function checkAns() {
+            const val = input.value.trim();
+            
+            if (val === item.w) {
+                isSolved = true;
+                input.classList.remove('wrong');
+                input.classList.add('correct');
+                fb.textContent = "✅ 完全正確！";
+                fb.style.color = "var(--success)";
+                speak("Correct");
+                
+                document.querySelector('.nav-btn.next').disabled = false;
+
+                autoNextTimer = setTimeout(() => {
+                    if(currentIndex < currentLevelData.length - 1) nextWord();
+                }, 2000);
+            } else {
+                input.classList.add('wrong');
+                fb.textContent = `❌ 錯誤！正確答案是: ${item.w}`;
+                fb.style.color = "var(--error)";
+                speak("Try again");
+                
+                setTimeout(() => {
+                   input.value = '';
+                   input.classList.remove('wrong');
+                   fb.textContent = '';
+                   input.focus();
+                }, 3000);
+            }
+        }
+    }
+
+    function renderQuiz(item, container) {
+        // Display Current Word (Question)
+        const wordDiv = document.createElement('div');
+        wordDiv.className = 'word-display';
+        
+        // 修正 4: 動態調整字體大小，避免破表
+        const len = item.w.length;
+        if (len > 12) {
+            wordDiv.style.fontSize = 'min(8vw, 2.2rem)';
+        } else if (len > 8) {
+            wordDiv.style.fontSize = 'min(10vw, 2.8rem)';
+        } else {
+            wordDiv.style.fontSize = 'min(12vw, 3.5rem)';
+        }
+        
+        wordDiv.textContent = item.w;
+        container.appendChild(wordDiv);
+
+        // Feedback
+        const fb = document.createElement('div');
+        fb.className = 'feedback-msg';
+        
+        // Generate Options
+        const optionsDiv = document.createElement('div');
+        optionsDiv.className = 'quiz-options';
+
+        // Get 3 random distractors from the current level
+        let distractors = currentLevelData.filter(x => x.w !== item.w);
+        
+        // Fix for small levels (e.g. X, Y, Z): If not enough distractors, borrow from fullData
+        if (distractors.length < 3) {
+            // Get candidate pool from fullData (excluding current item and existing distractors)
+            let candidates = fullData.filter(x => x.w !== item.w && !distractors.includes(x));
+            // Shuffle candidates
+            candidates.sort(() => Math.random() - 0.5);
+            // Fill remaining spots
+            let needed = 3 - distractors.length;
+            distractors = distractors.concat(candidates.slice(0, needed));
+        }
+
+        // Shuffle distractors
+        distractors.sort(() => Math.random() - 0.5);
+        // Take top 3
+        let choices = distractors.slice(0, 3);
+        // Add correct answer
+        choices.push(item);
+        // Shuffle choices
+        choices.sort(() => Math.random() - 0.5);
+
+        choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = choice.m; // Show meaning
+            
+            btn.onclick = function() {
+                if (isSolved) return; // Prevent multiple clicks after success
+
+                if (choice.w === item.w) {
+                    // Correct
+                    isSolved = true;
+                    btn.classList.add('correct');
+                    fb.textContent = "✅ Correct!";
+                    fb.style.color = "var(--success)";
+                    speak("Correct");
+                    document.querySelector('.nav-btn.next').disabled = false;
+                    
+                    // Auto Next
+                    autoNextTimer = setTimeout(() => {
+                        if (currentIndex < quizQueue.length - 1) nextWord();
+                    }, 1200);
+                } else {
+                    // Wrong
+                    btn.classList.add('wrong');
+                    fb.textContent = "❌ Try again!";
+                    fb.style.color = "var(--error)";
+                    speak("Try again");
+                    
+                    // Reset styling after shake
+                    setTimeout(() => {
+                        btn.classList.remove('wrong');
+                        fb.textContent = "";
+                    }, 1000);
+                }
+            };
+            optionsDiv.appendChild(btn);
+        });
+
+        container.appendChild(optionsDiv);
+        container.appendChild(fb);
+    }
+</script>
+
+</body>
+</html>
