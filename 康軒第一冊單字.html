@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>國一上康軒英語單字學習機</title>
+    <style>
+        :root {
+            --primary-color: #4facfe;
+            --secondary-color: #00f2fe;
+            --accent-color: #FFD700;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --success: #4cd964;
+            --error: #ff3b30;
+            --vowel-color: #ff3b30;
+            --consonant-color: #007aff;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+            margin: 0; padding: 20px;
+            min-height: 100vh;
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            width: 100%; 
+            max-width: 800px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            padding: 25px;
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px;
+            min-height: auto; 
+            position: relative;
+        }
+
+        header {
+            display: flex; flex-direction: column; gap: 12px;
+            align-items: center; background: #fff; padding: 15px;
+            border-radius: 15px; border: 2px solid #eee;
+            width: 100%;
+        }
+
+        h1 { margin: 0; font-size: 1.6rem; color: #4facfe; text-align: center; line-height: 1.4; }
+
+        .control-group {
+            display: flex; gap: 10px; width: 100%; 
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .info-bar {
+            font-size: 1rem; color: #666; background: #f0f8ff; 
+            padding: 8px 10px; border-radius: 8px; width: 100%; text-align: center;
+            border: 1px solid #d1eaff;
+        }
+
+        .select-wrapper {
+            display: flex; gap: 5px; flex: 1;
+            min-width: 180px; 
+            align-items: center;
+        }
+
+        select {
+            padding: 10px; border-radius: 8px; border: 2px solid var(--primary-color);
+            font-size: 1rem; background: white; flex: 1; cursor: pointer; width: 100%;
+            outline: none;
+        }
+
+        .refresh-btn {
+            background: var(--primary-color); color: white; border: none;
+            border-radius: 8px; width: 44px; height: 42px; cursor: pointer; font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .tabs {
+            display: flex; justify-content: center; background: #f0f4f8;
+            border-radius: 15px; padding: 5px; gap: 5px; width: 100%;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            flex: 1; padding: 12px 5px; border: none; background: transparent;
+            border-radius: 10px; font-size: 1rem; font-weight: bold;
+            color: #666; cursor: pointer; transition: 0.2s;
+            white-space: nowrap; 
+        }
+        .tab-btn.active { background: var(--primary-color); color: white; box-shadow: 0 3px 6px rgba(79, 172, 254, 0.3); }
+
+        .stage {
+            display: flex; align-items: center; justify-content: space-between;
+            min-height: 350px;
+            position: relative; width: 100%;
+            flex: 1;
+            flex-direction: row;
+        }
+
+        .nav-btn {
+            background: var(--accent-color); border: none;
+            width: 50px; height: 50px; border-radius: 50%;
+            font-size: 1.8rem; font-weight: bold; color: white;
+            cursor: pointer; box-shadow: 0 4px 0 #c9a800;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 20; flex-shrink: 0;
+        }
+        .nav-btn:disabled { background: #ddd; cursor: not-allowed; box-shadow: none; opacity: 0.5; }
+
+        .content-card {
+            flex: 1; margin: 0 15px; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; text-align: center;
+            background: #fff; border-radius: 15px;
+            min-height: 320px; 
+            width: 100%; overflow: hidden;
+            border: 1px solid #f0f0f0;
+        }
+
+        .word-display {
+            font-weight: bold; margin: 15px 0;
+            width: 100%;
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            line-height: 1.2;
+            color: var(--text-color);
+            text-align: center;
+            flex-wrap: wrap;
+        }
+
+        .vowel { color: var(--vowel-color); }
+        .consonant { color: var(--consonant-color); }
+        .syllable-separator { margin: 0 1px; color: #ccc; font-weight: bold; font-size: 0.6em; vertical-align: middle;}
+        
+        .chinese-meaning { font-size: 1.6rem; color: #555; margin-bottom: 8px; font-weight: 600; }
+        
+        .letter-pool, .answer-area {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+            margin-top: 15px; min-height: 50px; width: 100%;
+        }
+        .answer-area { border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 10px; }
+
+        .block-btn {
+            width: 44px; height: 44px; font-size: 1.5rem;
+            background: white; border: 2px solid var(--primary-color);
+            border-radius: 8px; cursor: pointer;
+            box-shadow: 0 3px 0 #ddd;
+        }
+        .block-btn.used { opacity: 0.4; pointer-events: none; background-color: #f8f8f8; }
+        .block-btn.correct-ans { background-color: var(--success); color: white; border-color: var(--success); }
+
+        .input-box {
+            font-size: 1.5rem; 
+            padding: 10px; border: 3px solid var(--primary-color);
+            border-radius: 12px; width: 100%; max-width: 350px; text-align: center; outline: none;
+            margin-top: 15px;
+        }
+        .input-box.correct { border-color: var(--success); background: #f0fff4; }
+        .input-box.wrong { border-color: var(--error); background: #fff5f5; }
+
+        .dictate-hint {
+            font-size: 1.6rem;
+            font-family: monospace;
+            color: var(--primary-color);
+            margin: 15px 0 5px 0;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        .quiz-options {
+            display: flex; flex-direction: column; gap: 10px;
+            width: 100%; max-width: 400px;
+            margin-top: 20px;
+        }
+        .option-btn {
+            padding: 15px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            color: #444;
+            cursor: pointer;
+            text-align: center;
+        }
+        .option-btn.correct { background: var(--success); color: white; border-color: var(--success); }
+        .option-btn.wrong { background: var(--error); color: white; border-color: var(--error); }
+
+        .feedback-msg {
+            margin-top: 15px; font-size: 1.3rem; font-weight: bold; min-height: 1.5em; text-align: center;
+        }
+        
+        .btn {
+            padding: 10px 20px; border-radius: 25px; border: none;
+            font-size: 1.1rem; cursor: pointer; background: #eee;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-accent { background: var(--accent-color); color: #333; }
+
+        .modal-backdrop {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        .modal-backdrop.show { display: flex; }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 15px;
+            text-align: center; max-width: 90%;
+        }
+
+        @media (max-width: 600px) {
+            .nav-btn { width: 45px; height: 45px; font-size: 1.5rem; }
+            .content-card { margin: 0 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>🏆 國一上 康軒英語單字學習機</h1>
+        <div class="info-bar" id="statusInfo">📚 載入中...</div>
+        <div class="control-group">
+            <div class="select-wrapper">
+                <select id="unitSelect" onchange="changeUnit()"></select>
+            </div>
+            <div class="select-wrapper">
+                <select id="voiceSelect" onchange="changeVoice()"><option value="0">正在搜尋美式發音...</option></select>
+                <button class="refresh-btn" onclick="initVoices(true)" title="重整語音">🔊</button>
+            </div>
+        </div>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="setMode('learn')">📖 學習</button>
+        <button class="tab-btn" onclick="setMode('block')">🧩 積木</button>
+        <button class="tab-btn" onclick="setMode('dictate')">✍️ 聽寫</button>
+        <button class="tab-btn" onclick="setMode('quiz')">📝 測驗</button>
+    </nav>
+
+    <main class="stage">
+        <button class="nav-btn prev" onclick="prevWord()">&lt;</button>
+        <div class="content-card" id="cardArea"></div>
+        <button class="nav-btn next" onclick="nextWord()">&gt;</button>
+    </main>
+</div>
+
+<div id="completionModal" class="modal-backdrop">
+    <div class="modal-content">
+        <h2 style="color: var(--success);">🎉 單元完成！</h2>
+        <p>恭喜您完成了 <span id="completedUnitName" style="font-weight: bold; color: var(--primary-color);"></span> 單元的所有練習！</p>
+        <button onclick="hideCompletionModal()" class="btn btn-primary" style="margin: 15px auto 0;">繼續學習</button>
+    </div>
+</div>
+
+<script>
+    const unitVocabulary = {
+        "Lesson 1": [
+            { w: "family", m: "家人;家庭" },
+            { w: "husband", m: "丈夫" },
+            { w: "wife", m: "妻子" },
+            { w: "uncle", m: "叔(伯)父; 姑(姨)丈;舅舅" },
+            { w: "aunt", m: "嬸嬸;伯母; 姑(姨)媽;舅媽" },
+            { w: "cousin", m: "堂(表)兄弟姐妹" },
+            { w: "son", m: "兒子" },
+            { w: "daughter", m: "女兒" },
+            { w: "parent", m: "雙親之一" },
+            { w: "child", m: "孩子" },
+            { w: "young", m: "年輕的" },
+            { w: "man", m: "男人" },
+            { w: "handsome", m: "英俊的" },
+            { w: "our", m: "我們的" },
+            { w: "PE", m: "體育" },
+            { w: "really", m: "真地" },
+            { w: "classroom", m: "教室" },
+            { w: "same", m: "一樣的" },
+            { w: "class", m: "班級;課程" },
+            { w: "again", m: "再一次" },
+            { w: "Nice to meet you.", m: "很高興認識你" },
+            { w: "too", m: "也;太" },
+            { w: "news", m: "消息;新聞" },
+            { w: "problem", m: "問題" },
+            { w: "strict", m: "嚴格的" },
+            { w: "junior high school", m: "國民中學" },
+            { w: "warm", m: "溫暖的" },
+            { w: "farmer", m: "農夫" },
+            { w: "cook", m: "廚師;煮" },
+            { w: "nurse", m: "護理師;護士" },
+            { w: "beautiful", m: "漂亮的;美麗的" },
+            { w: "woman", m: "女人" },
+            { w: "doctor", m: "醫生" },
+            { w: "senior high school", m: "高級中學" },
+            { w: "pet", m: "寵物" },
+            { w: "cute", m: "可愛的" },
+            { w: "nice", m: "好的;好心的" }
+        ],
+        "Lesson 2": [
+            { w: "monkey", m: "猴子" },
+            { w: "fox", m: "狐狸" },
+            { w: "sheep", m: "綿羊" },
+            { w: "tiger", m: "老虎" },
+            { w: "zebra", m: "斑馬" },
+            { w: "lion", m: "獅子" },
+            { w: "mouse", m: "老鼠" },
+            { w: "bear", m: "熊" },
+            { w: "movie theater", m: "電影院" },
+            { w: "Chinese", m: "中國的; 中國人;中文" },
+            { w: "animal", m: "動物" },
+            { w: "sign", m: "符號" },
+            { w: "rat", m: "大老鼠" },
+            { w: "ox", m: "(公)牛" },
+            { w: "rabbit", m: "兔子" },
+            { w: "dragon", m: "龍" },
+            { w: "snake", m: "蛇" },
+            { w: "horse", m: "馬" },
+            { w: "goat", m: "山羊" },
+            { w: "rooster", m: "公雞" },
+            { w: "smart", m: "聰明的" },
+            { w: "energetic", m: "充滿活力的" },
+            { w: "true", m: "真的;真實的" },
+            { w: "no wonder", m: "難怪" },
+            { w: "people", m: "人們" },
+            { w: "What about", m: "…………………怎麼樣?" },
+            { w: "people person", m: "人緣好的人" },
+            { w: "picture", m: "照片;圖畫" },
+            { w: "elephant", m: "大象" },
+            { w: "or", m: "或者" },
+            { w: "size", m: "尺寸" },
+            { w: "different", m: "不同的" },
+            { w: "very", m: "很;非常" },
+            { w: "their", m: "牠們的;他們的" },
+            { w: "meter", m: "公尺" },
+            { w: "but", m: "但是" },
+            { w: "only", m: "僅僅;只" },
+            { w: "lifespan", m: "壽命" }
+        ],
+        "Lesson 3": [
+            { w: "living room", m: "客廳" },
+            { w: "bedroom", m: "臥室" },
+            { w: "bathroom", m: "浴室" },
+            { w: "dining room", m: "飯廳" },
+            { w: "behind", m: "在 後面" },
+            { w: "in front of", m: "在……………前面" },
+            { w: "between", m: "在……………中間" },
+            { w: "next to", m: "在……………旁邊" },
+            { w: "near", m: "在 附近" },
+            { w: "house", m: "房子" },
+            { w: "style", m: "風格:款式" },
+            { w: "idea", m: "想法;點子" },
+            { w: "let's", m: "我們一起………………吧" },
+            { w: "get", m: "獲得" },
+            { w: "some", m: "一些的;一些" },
+            { w: "smartphone", m: "智慧型手機" },
+            { w: "tool", m: "工具" },
+            { w: "please", m: "請" },
+            { w: "quiet", m: "安靜的" },
+            { w: "step", m: "步驟;一步" },
+            { w: "upload", m: "上傳" },
+            { w: "photo", m: "相片" },
+            { w: "choose", m: "選擇" },
+            { w: "type", m: "種類" },
+            { w: "theme", m: "主題" },
+            { w: "wait", m: "等待" },
+            { w: "expensive", m: "昂貴的" },
+            { w: "with", m: "對 來說;和" },
+            { w: "question", m: "問題" },
+            { w: "I see.", m: "我了解了。" },
+            { w: "soft", m: "柔軟的" },
+            { w: "hard", m: "硬的" },
+            { w: "in fact", m: "事實上" },
+            { w: "around", m: "圍繞;到處" },
+            { w: "world", m: "世界" },
+            { w: "kitchen", m: "廚房" },
+            { w: "beside", m: "在 旁邊" },
+            { w: "ice", m: "冰" },
+            { w: "inside", m: "在 裡面;在室內" },
+            { w: "blanket", m: "毛毯" }
+        ],
+        "Lesson 4": [
+            { w: "listen", m: "聽" },
+            { w: "voice", m: "聲音;歌喉" },
+            { w: "stand up", m: "站起來" },
+            { w: "sit down", m: "坐下" },
+            { w: "take a photo", m: "拍照" },
+            { w: "make", m: "製造" },
+            { w: "any", m: "任何(的)" },
+            { w: "noise", m: "噪音" },
+            { w: "can't", m: "不能;不會; 不可以" },
+            { w: "talk", m: "講話" },
+            { w: "noisy", m: "吵鬧的" },
+            { w: "late", m: "晚的;遲到的" },
+            { w: "early", m: "早的;初期的" },
+            { w: "sidewalk", m: "人行道" },
+            { w: "song", m: "歌曲" },
+            { w: "check out", m: "查看" },
+            { w: "cross", m: "跨越" },
+            { w: "road", m: "道路" },
+            { w: "watch out", m: "小心;注意" },
+            { w: "real", m: "真的;真實的" },
+            { w: "all the time", m: "一直" },
+            { w: "Guess what?", m: "你猜怎麼著?" },
+            { w: "traffic lights", m: "紅綠燈" },
+            { w: "traffic", m: "交通" },
+            { w: "ground", m: "地面" },
+            { w: "design", m: "設計" },
+            { w: "user", m: "使用者" },
+            { w: "use", m: "使用" },
+            { w: "download", m: "下載" },
+            { w: "warn", m: "警告" },
+            { w: "oncoming", m: "迎面而來的" },
+            { w: "crosswalk", m: "斑馬線" },
+            { w: "also", m: "而且;也" },
+            { w: "the USA", m: "美國" },
+            { w: "special", m: "特別的" },
+            { w: "lane", m: "小路:小巷" },
+            { w: "way", m: "方式;方法;路" },
+            { w: "other", m: "其他的" }
+        ],
+        "Lesson 5": [
+            { w: "week", m: "星期" },
+            { w: "Monday", m: "星期一" },
+            { w: "Tuesday", m: "星期二" },
+            { w: "Wednesday", m: "星期三" },
+            { w: "basketball", m: "籃球" },
+            { w: "Thursday", m: "星期四" },
+            { w: "Friday", m: "星期五" },
+            { w: "Saturday", m: "星期六" },
+            { w: "birthday", m: "生日" },
+            { w: "party", m: "派對" },
+            { w: "Sunday", m: "星期日" },
+            { w: "day", m: "日" },
+            { w: "weekend", m: "週末" },
+            { w: "noon", m: "中午" },
+            { w: "wake up", m: "醒來" },
+            { w: "look for", m: "尋找" },
+            { w: "Hurry up.", m: "快一點。" },
+            { w: "by the way", m: "順帶一提" },
+            { w: "join", m: "參加;加入" },
+            { w: "group", m: "團體" },
+            { w: "chat", m: "談話" },
+            { w: "tonight", m: "今晚" },
+            { w: "meeting", m: "會議" },
+            { w: "p.m.", m: "下午;晚上" },
+            { w: "life", m: "生活" },
+            { w: "prepare", m: "準備" },
+            { w: "o'clock", m: "點鐘" },
+            { w: "everyone", m: "每個人; 各位" },
+            { w: "a.m.", m: "上午;凌晨" },
+            { w: "city", m: "城市" },
+            { w: "say", m: "說" },
+            { w: "sun", m: "太陽" },
+            { w: "rise", m: "上升" },
+            { w: "shine", m: "照耀;發光" },
+            { w: "dinner", m: "晚餐" }
+        ],
+        "Lesson 6": [
+            { w: "gate", m: "大門" },
+            { w: "sports field", m: "運動場;操場" },
+            { w: "sport", m: "運動" },
+            { w: "basketball court", m: "籃球場" },
+            { w: "restroom", m: "廁所" },
+            { w: "library", m: "圖書館" },
+            { w: "playground", m: "遊樂場" },
+            { w: "swing", m: "秋千" },
+            { w: "slide", m: "滑梯" },
+            { w: "garden", m: "花園" },
+            { w: "seesaw", m: "蹺蹺板" },
+            { w: "basket", m: "籃子" },
+            { w: "rest", m: "休息" },
+            { w: "show around", m: "帶 參觀" },
+            { w: "building", m: "建築物" },
+            { w: "gym", m: "體育館" },
+            { w: "work out", m: "鍛鍊身體" },
+            { w: "after school", m: "放學後" },
+            { w: "large", m: "大的;大量的" },
+            { w: "classmate", m: "同班同學" },
+            { w: "put", m: "放置" },
+            { w: "shelf", m: "架子" },
+            { w: "outside", m: "在 外面;在室外" },
+            { w: "worry", m: "擔心" },
+            { w: "wear", m: "穿;戴" },
+            { w: "still", m: "仍然" },
+            { w: "find", m: "找到;發現" },
+            { w: "foot", m: "腳 (單數)" },
+            { w: "hungry", m: "飢餓的" },
+            { w: "sandwich", m: "三明治" },
+            { w: "find one's feet", m: "適應新環境" },
+            { w: "meaning", m: "意思;意義" },
+            { w: "think", m: "想起;思考;認為" },
+            { w: "a lot of", m: "許多的" },
+            { w: "thing", m: "事;物" },
+            { w: "however", m: "然而" },
+            { w: "friendly", m: "友善的" }
+        ]
+    };
+
+    let currentUnit = "Lesson 1";
+    let currentLevelData = [];
+    let quizQueue = []; 
+    let currentIndex = 0;
+    let currentMode = 'learn';
+    let showSyllables = false;
+    let isSolved = false;
+    let voices = [];
+    let selectedVoice = null;
+    let synth = window.speechSynthesis;
+    let autoNextTimer = null;
+
+    window.onload = function() {
+        populateUnitSelect();
+        initVoices();
+        loadUnit("Lesson 1");
+    };
+
+    function populateUnitSelect() {
+        const select = document.getElementById('unitSelect');
+        select.innerHTML = '';
+        Object.keys(unitVocabulary).forEach(unit => {
+            const option = document.createElement('option');
+            option.value = unit;
+            option.textContent = unit;
+            select.appendChild(option);
+        });
+    }
+
+    function changeUnit() {
+        loadUnit(document.getElementById('unitSelect').value);
+    }
+
+    function loadUnit(unitName) {
+        currentUnit = unitName;
+        currentLevelData = unitVocabulary[unitName].map(item => {
+            const s = item.w.match(/[^aeiouy]*[aeiouy]+(?:[^aeiouy]*$|[^aeiouy](?=[^aeiouy]))?/gi) || [item.w];
+            return { ...item, s: s };
+        });
+        currentIndex = 0;
+        isSolved = false;
+        clearTimeout(autoNextTimer);
+        if (currentMode === 'quiz') quizQueue = [...currentLevelData].sort(() => Math.random() - 0.5);
+        updateStatusInfo();
+        render();
+        if(currentMode === 'learn') setTimeout(() => speak(currentLevelData[currentIndex].w), 500);
+    }
+
+    function updateStatusInfo() {
+        document.getElementById('statusInfo').textContent = `📚 ${currentUnit} (${currentLevelData.length} 字)`;
+    }
+
+    function initVoices(manual = false) {
+        const voiceSelect = document.getElementById('voiceSelect');
+        const load = () => {
+            voices = synth.getVoices();
+            if (voices.length > 0) {
+                // 優先選擇美式英語 (en-US)
+                const usEnglishVoices = voices.filter(v => v.lang === 'en-US' || v.lang === 'en_US');
+                const otherEnglishVoices = voices.filter(v => v.lang.startsWith('en') && v.lang !== 'en-US' && v.lang !== 'en_US');
+                const otherVoices = voices.filter(v => !v.lang.startsWith('en'));
+                
+                // 重新排序：美式 -> 其他英語 -> 其他語言
+                const sortedVoices = [...usEnglishVoices, ...otherEnglishVoices, ...otherVoices];
+                
+                voiceSelect.innerHTML = '';
+                sortedVoices.forEach((v, i) => {
+                    const op = document.createElement('option');
+                    op.textContent = v.name + (v.lang ? ` (${v.lang})` : '');
+                    op.value = i;
+                    voiceSelect.appendChild(op);
+                });
+
+                // 自動預設為第一個找到的美式語音
+                if (usEnglishVoices.length > 0) {
+                    selectedVoice = usEnglishVoices[0];
+                    voiceSelect.selectedIndex = 0;
+                } else if (sortedVoices.length > 0) {
+                    selectedVoice = sortedVoices[0];
+                    voiceSelect.selectedIndex = 0;
+                }
+
+                if (manual) speak("American English ready");
+            }
+        };
+        load();
+        if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = load;
+        // 針對部分瀏覽器（如 Chrome）的延遲加載進行補強
+        setTimeout(load, 500);
+    }
+
+    function changeVoice() {
+        // 從排序後的清單中根據索引取得語音
+        const load = () => {
+            voices = synth.getVoices();
+            const usEnglishVoices = voices.filter(v => v.lang === 'en-US' || v.lang === 'en_US');
+            const otherEnglishVoices = voices.filter(v => v.lang.startsWith('en') && v.lang !== 'en-US' && v.lang !== 'en_US');
+            const otherVoices = voices.filter(v => !v.lang.startsWith('en'));
+            const sortedVoices = [...usEnglishVoices, ...otherEnglishVoices, ...otherVoices];
+            
+            selectedVoice = sortedVoices[document.getElementById('voiceSelect').value];
+            speak("Voice changed");
+        };
+        load();
+    }
+
+    function speak(text) {
+        if (synth.speaking) synth.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        if (selectedVoice) u.voice = selectedVoice;
+        u.rate = 0.8; 
+        synth.speak(u);
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        currentIndex = 0;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        const activeIdx = {'learn':0, 'block':1, 'dictate':2, 'quiz':3}[mode];
+        document.querySelectorAll('.tab-btn')[activeIdx].classList.add('active');
+        isSolved = false;
+        if (mode === 'quiz') quizQueue = [...currentLevelData].sort(() => Math.random() - 0.5);
+        render();
+        if(['learn', 'block', 'dictate'].includes(mode)) setTimeout(() => speak(currentLevelData[currentIndex].w), 300);
+    }
+
+    function prevWord() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            isSolved = false;
+            render();
+            speak((currentMode === 'quiz' ? quizQueue : currentLevelData)[currentIndex].w);
+        }
+    }
+
+    function nextWord() {
+        const dataLength = (currentMode === 'quiz') ? quizQueue.length : currentLevelData.length;
+        if (currentIndex < dataLength - 1) {
+            currentIndex++;
+            isSolved = false;
+            render();
+            speak((currentMode === 'quiz' ? quizQueue : currentLevelData)[currentIndex].w);
+        } else {
+            showCompletionModal(currentUnit);
+        }
+    }
+
+    function showCompletionModal(unitName) {
+        document.getElementById('completedUnitName').textContent = unitName;
+        document.getElementById('completionModal').classList.add('show');
+    }
+
+    function hideCompletionModal() {
+        document.getElementById('completionModal').classList.remove('show');
+        loadUnit(currentUnit);
+    }
+
+    function render() {
+        const card = document.getElementById('cardArea');
+        card.innerHTML = '';
+        const currentData = (currentMode === 'quiz') ? quizQueue : currentLevelData;
+        const item = currentData[currentIndex];
+
+        document.querySelector('.nav-btn.prev').disabled = (currentIndex === 0);
+        document.querySelector('.nav-btn.next').disabled = (currentMode !== 'learn' && !isSolved);
+
+        if (currentMode === 'learn') renderLearn(item, card);
+        else if (currentMode === 'block') renderBlock(item, card);
+        else if (currentMode === 'dictate') renderDictate(item, card);
+        else if (currentMode === 'quiz') renderQuiz(item, card);
+    }
+
+    function renderLearn(item, container) {
+        const info = document.createElement('div');
+        info.className = 'chinese-meaning';
+        info.textContent = `${currentIndex + 1}. ${item.m}`;
+        container.appendChild(info);
+
+        const wordDiv = document.createElement('div');
+        wordDiv.className = 'word-display';
+        wordDiv.style.fontSize = item.w.length > 10 ? '2.2rem' : '3.5rem';
+        wordDiv.innerHTML = formatWord(item.w, showSyllables ? item.s : null);
+        container.appendChild(wordDiv);
+
+        const btnGroup = document.createElement('div');
+        btnGroup.style.display = 'flex'; btnGroup.style.gap = '10px';
+        
+        const spk = document.createElement('button');
+        spk.className = 'btn btn-primary'; spk.textContent = '🔊 發音';
+        spk.onclick = () => speak(item.w);
+        btnGroup.appendChild(spk);
+
+        const toggle = document.createElement('button');
+        toggle.className = 'btn btn-accent';
+        toggle.textContent = showSyllables ? '隱藏音節' : '音節分解';
+        toggle.onclick = () => { showSyllables = !showSyllables; render(); };
+        btnGroup.appendChild(toggle);
+
+        container.appendChild(btnGroup);
+        isSolved = true;
+    }
+
+    function renderBlock(item, container) {
+        isSolved = false;
+        const info = document.createElement('div');
+        info.className = 'chinese-meaning';
+        info.textContent = item.m;
+        container.appendChild(info);
+
+        const ansArea = document.createElement('div');
+        ansArea.className = 'answer-area';
+        container.appendChild(ansArea);
+
+        const pool = document.createElement('div');
+        pool.className = 'letter-pool';
+        container.appendChild(pool);
+
+        const fb = document.createElement('div');
+        fb.className = 'feedback-msg';
+        container.appendChild(fb);
+
+        const target = item.w.toLowerCase().replace(/[^a-z]/g, '');
+        let currentAns = "";
+        
+        target.split('').sort(() => Math.random() - 0.5).forEach((char, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'block-btn';
+            btn.textContent = char.toUpperCase();
+            btn.onclick = () => {
+                if (isSolved) return;
+                const ab = document.createElement('div');
+                ab.className = 'block-btn'; ab.textContent = char.toUpperCase();
+                ansArea.appendChild(ab);
+                btn.classList.add('used');
+                currentAns += char;
+                if (currentAns === target) {
+                    isSolved = true; speak("Correct");
+                    fb.textContent = "✅ Correct!";
+                    setTimeout(nextWord, 1500);
+                } else if (currentAns.length === target.length) {
+                    speak("Wrong");
+                    fb.textContent = "❌ Try Again";
+                    setTimeout(() => { render(); }, 1000);
+                }
+            };
+            pool.appendChild(btn);
+        });
+    }
+
+    function renderDictate(item, container) {
+        isSolved = false;
+        const info = document.createElement('div');
+        info.className = 'chinese-meaning';
+        info.textContent = item.m;
+        container.appendChild(info);
+
+        const hint = document.createElement('div');
+        hint.className = 'dictate-hint';
+        hint.textContent = item.w.replace(/[a-zA-Z]/g, (c, i) => i === 0 ? c : '_');
+        container.appendChild(hint);
+
+        const input = document.createElement('input');
+        input.className = 'input-box';
+        input.placeholder = '輸入單字並按 Enter';
+        input.onkeyup = (e) => {
+            if (e.key === 'Enter') {
+                if (input.value.trim().toLowerCase() === item.w.toLowerCase()) {
+                    isSolved = true; input.classList.add('correct'); speak("Correct");
+                    setTimeout(nextWord, 1500);
+                } else {
+                    input.classList.add('wrong'); speak("Wrong");
+                    setTimeout(() => input.classList.remove('wrong'), 1000);
+                }
+            }
+        };
+        container.appendChild(input);
+        setTimeout(() => input.focus(), 100);
+    }
+
+    function renderQuiz(item, container) {
+        isSolved = false;
+        const q = document.createElement('div');
+        q.className = 'word-display'; q.textContent = item.w;
+        container.appendChild(q);
+
+        const options = document.createElement('div');
+        options.className = 'quiz-options';
+        
+        let choices = [item];
+        let others = currentLevelData.filter(x => x.w !== item.w);
+        while (choices.length < 4 && others.length > 0) {
+            let rand = others.splice(Math.floor(Math.random() * others.length), 1)[0];
+            choices.push(rand);
+        }
+        choices.sort(() => Math.random() - 0.5);
+
+        choices.forEach(c => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn'; btn.textContent = c.m;
+            btn.onclick = () => {
+                if (isSolved) return;
+                if (c.w === item.w) {
+                    isSolved = true; btn.classList.add('correct'); speak("Correct");
+                    setTimeout(nextWord, 1500);
+                } else {
+                    btn.classList.add('wrong'); speak("Wrong");
+                }
+            };
+            options.appendChild(btn);
+        });
+        container.appendChild(options);
+    }
+
+    function formatWord(word, syllables) {
+        let html = '';
+        (syllables || [word]).forEach((part, idx) => {
+            let partHtml = '';
+            for (let c of part) {
+                if (/[aeiouyAEIOUY]/.test(c)) partHtml += `<span class="vowel">${c}</span>`;
+                else if (/[a-zA-Z]/.test(c)) partHtml += `<span class="consonant">${c}</span>`;
+                else partHtml += c;
+            }
+            html += `<span>${partHtml}</span>`;
+            if (syllables && idx < syllables.length - 1) html += '<span class="syllable-separator">·</span>';
+        });
+        return html;
+    }
+</script>
+</body>
+</html>
