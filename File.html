@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>檔案櫃</title>
+</head>
+<body class="bg-gray-100 p-4 md:p-6 font-sans text-gray-800">
+  <div class="max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow-md relative border border-gray-300">
+    
+    <!-- 標題與管理員入口 -->
+    <div class="flex justify-between items-center mb-6 border-b-2 border-gray-800 pb-4">
+      <h1 class="text-2xl font-black text-gray-900">📁 檔案櫃</h1>
+      
+      <!-- 淡化處理的登入圖示 -->
+      <button onclick="showLoginModal()" class="text-gray-300 opacity-50 hover:opacity-100 hover:text-blue-800 transition duration-300 ease-in-out cursor-default hover:cursor-pointer" title="登入">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- 管理員控制台 (預設隱藏) -->
+    <div id="adminSection" class="hidden mb-8 bg-white border border-gray-400 shadow-sm rounded-lg overflow-hidden">
+      <div class="bg-gray-900 text-white px-6 py-3 flex justify-between items-center">
+        <h2 class="text-lg font-bold">⚙️ 管理員控制台</h2>
+        <button onclick="logoutAdmin()" class="text-sm bg-gray-700 hover:bg-gray-600 border border-gray-500 px-3 py-1 rounded transition">登出</button>
+      </div>
+      <div class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50">
+        
+        <!-- 上傳檔案 (支援多檔案) -->
+        <div class="md:col-span-3 bg-white border border-gray-400 rounded-lg p-5 shadow-sm">
+          <h3 class="font-bold text-gray-900 mb-4 border-b border-gray-400 pb-2">📤 上傳檔案 (支援多檔案)</h3>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+              <label class="text-sm font-bold text-gray-800 whitespace-nowrap">分類：</label>
+              <select id="uploadCategorySelect" onchange="toggleUploadCustomCategory()" class="border border-gray-400 rounded px-2 py-1.5 w-full sm:w-32 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-700"></select>
+              <input type="text" id="uploadCustomCategoryInput" placeholder="輸入新分類" class="hidden border border-gray-400 rounded px-2 py-1.5 w-full sm:w-32 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+            </div>
+            <!-- 加入 multiple 屬性支援多選 -->
+            <input type="file" id="fileInput" multiple class="flex-1 text-sm text-gray-800 border border-gray-400 p-1.5 rounded min-w-0" />
+            <button id="uploadBtn" onclick="upload()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-1.5 px-6 rounded transition border border-transparent whitespace-nowrap w-full sm:w-auto flex-shrink-0">上傳</button>
+          </div>
+          <p id="uploadStatus" class="mt-3 text-sm font-bold text-gray-800"></p>
+        </div>
+
+        <!-- 建立新分類 -->
+        <div class="bg-white border border-gray-400 rounded-lg p-5 shadow-sm">
+          <h3 class="font-bold text-gray-900 mb-4 border-b border-gray-400 pb-2">📁 建立空分類</h3>
+          <div class="flex flex-col gap-2">
+            <input type="text" id="newCategoryInput" placeholder="輸入分類名稱" class="border border-gray-400 rounded px-3 py-1.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+            <button id="createCatBtn" onclick="createCategory()" class="bg-green-700 hover:bg-green-800 text-white font-bold py-1.5 px-4 rounded transition text-sm border border-transparent">建立</button>
+          </div>
+          <p id="createCatStatus" class="mt-2 text-sm font-bold text-gray-800"></p>
+        </div>
+
+        <!-- 修改分類名稱 -->
+        <div class="bg-white border border-gray-400 rounded-lg p-5 shadow-sm">
+          <h3 class="font-bold text-gray-900 mb-4 border-b border-gray-400 pb-2">✏️ 修改分類名稱</h3>
+          <div class="flex flex-col gap-2">
+            <select id="oldCategorySelect" class="border border-gray-400 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-700 w-full">
+              <option value="">選擇要修改的分類</option>
+            </select>
+            <div class="flex gap-2">
+              <input type="text" id="renameCategoryInput" placeholder="輸入新名稱" class="border border-gray-400 rounded px-3 py-1.5 flex-1 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-700 min-w-0" />
+              <button id="renameCatBtn" onclick="renameCategory()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-1.5 px-4 rounded transition text-sm whitespace-nowrap border border-transparent">修改</button>
+            </div>
+          </div>
+          <p id="renameCatStatus" class="mt-2 text-sm font-bold text-gray-800"></p>
+        </div>
+
+        <!-- 修改密碼 -->
+        <div class="bg-white border border-gray-400 rounded-lg p-5 shadow-sm">
+          <h3 class="font-bold text-gray-900 mb-4 border-b border-gray-400 pb-2">🔑 更改密碼</h3>
+          <div class="flex flex-col gap-2">
+            <input type="password" id="newPasswordInput" placeholder="輸入新密碼" class="border border-gray-400 rounded px-3 py-1.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+            <button id="changePwdBtn" onclick="changePassword()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold py-1.5 px-4 rounded transition text-sm border border-transparent">更新</button>
+          </div>
+          <p id="changePwdStatus" class="mt-2 text-sm font-bold text-gray-800"></p>
+        </div>
+        
+      </div>
+    </div>
+
+    <!-- 檔案列表區塊 -->
+    <div>
+      <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+        <h2 class="text-xl font-bold text-gray-900">📄 檔案列表</h2>
+        
+        <!-- 分頁、篩選器與搜尋 -->
+        <div class="flex flex-col sm:flex-row flex-wrap items-center gap-3">
+          <div class="flex gap-3 w-full sm:w-auto">
+            <select id="itemsPerPageSelect" onchange="changeItemsPerPage()" class="flex-1 sm:flex-none border border-gray-400 rounded px-2 py-1.5 text-sm text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-700">
+              <option value="10">10 筆 / 頁</option>
+              <option value="20">20 筆 / 頁</option>
+              <option value="30">30 筆 / 頁</option>
+              <option value="all">全部顯示</option>
+            </select>
+            <select id="categoryFilter" onchange="filterFiles()" class="flex-1 sm:flex-none border border-gray-400 rounded px-2 py-1.5 text-sm text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-700 max-w-full sm:max-w-[150px]">
+              <option value="all">所有分類</option>
+            </select>
+          </div>
+          
+          <div class="flex gap-3 w-full sm:w-auto">
+            <input type="text" id="searchInput" oninput="filterFiles()" placeholder="搜尋檔名..." class="flex-1 sm:flex-none border border-gray-400 rounded px-3 py-1.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-700 w-full sm:w-32 md:w-48 transition-all" />
+            
+            <button onclick="loadFiles()" class="text-blue-800 hover:text-blue-900 font-bold text-sm flex items-center justify-center transition bg-blue-100 hover:bg-blue-200 border border-blue-300 px-3 py-1.5 rounded whitespace-nowrap">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              重新整理
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div id="fileList" class="bg-white border border-gray-400 rounded-md divide-y divide-gray-300 shadow-sm">
+        <div class="p-4 text-center font-bold text-gray-700">載入中...</div>
+      </div>
+
+      <!-- 分頁控制 -->
+      <div id="paginationControls" class="hidden flex flex-col sm:flex-row justify-between items-center mt-4 gap-3">
+        <span id="pageInfo" class="text-sm text-gray-800 font-bold"></span>
+        <div class="flex space-x-2 w-full sm:w-auto">
+          <button id="prevBtn" onclick="changePage(-1)" class="flex-1 sm:flex-none px-4 py-2 bg-white border border-gray-400 rounded hover:bg-gray-100 text-sm font-bold text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition">上一頁</button>
+          <button id="nextBtn" onclick="changePage(1)" class="flex-1 sm:flex-none px-4 py-2 bg-white border border-gray-400 rounded hover:bg-gray-100 text-sm font-bold text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition">下一頁</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下載進度提示 Toast -->
+  <div id="downloadToast" class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[80] bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-opacity duration-300 border border-gray-600">
+    <svg class="animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    <span id="downloadToastText" class="font-bold text-sm tracking-wider">正在準備檔案...</span>
+  </div>
+
+  <!-- 管理員登入 Modal -->
+  <div id="loginModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 transition-opacity p-4">
+    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm border border-gray-400">
+      <h3 class="text-lg font-bold mb-4 text-gray-900 border-b pb-2">管理員登入</h3>
+      <input type="password" id="adminPwdInput" placeholder="請輸入密碼" class="border border-gray-400 rounded px-3 py-2 w-full mb-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+      <div class="flex justify-end space-x-2">
+        <button onclick="closeLoginModal()" class="px-4 py-2 font-bold text-gray-800 hover:bg-gray-200 border border-gray-400 rounded transition">取消</button>
+        <button onclick="verifyAdmin()" id="loginBtn" class="px-4 py-2 font-bold bg-blue-700 hover:bg-blue-800 text-white rounded transition border border-transparent">登入</button>
+      </div>
+      <p id="loginStatus" class="mt-3 text-sm font-bold text-red-700 text-center"></p>
+    </div>
+  </div>
+
+  <!-- 修改分類的下拉選單 Modal -->
+  <div id="changeCategoryModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 transition-opacity p-4">
+    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm border border-gray-400">
+      <h3 class="text-lg font-bold mb-2 text-gray-900 border-b pb-2">修改檔案分類</h3>
+      <p id="changeCategoryFileName" class="text-sm font-bold text-gray-700 mb-4 truncate"></p>
+      
+      <select id="newCategorySelect" onchange="toggleCustomCategoryInput()" class="border border-gray-400 rounded px-3 py-2 w-full mb-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-700"></select>
+      
+      <input type="text" id="customCategoryInput" placeholder="輸入新分類名稱" class="hidden border border-gray-400 rounded px-3 py-2 w-full mb-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+      
+      <div class="flex justify-end space-x-2 mt-2">
+        <button onclick="closeChangeCategoryModal()" class="px-4 py-2 font-bold text-gray-800 hover:bg-gray-200 border border-gray-400 rounded transition">取消</button>
+        <button onclick="submitChangeCategory()" id="submitChangeCatBtn" class="px-4 py-2 font-bold bg-blue-700 hover:bg-blue-800 text-white rounded transition border border-transparent">確認修改</button>
+      </div>
+      <p id="changeCategoryStatus" class="mt-3 text-sm font-bold text-red-700 text-center"></p>
+    </div>
+  </div>
+
+  <script>
+    // 🔥 警告：請務必將下方的網址替換成你的 GAS 應用程式網址 🔥
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzMCAfYxuS4pZAWBfIK51r8T21q7R1x_ficfirrtJalbmhluwbTlWCV1Qx4NXRUL_8djg/exec';
+    
+    let allFiles = []; 
+    let currentFilteredFiles = [];
+    let currentPage = 1;
+    let itemsPerPage = 10;
+    let adminPassword = ''; 
+    let userCreatedCategories = []; 
+    let currentChangeFileId = null; 
+
+    document.addEventListener("DOMContentLoaded", loadFiles);
+
+    // ✨ 強化錯誤診斷 API：如果失敗會詳細告訴你原因 ✨
+    async function apiPost(payload) {
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`網路錯誤或被阻擋 (HTTP 狀態碼 ${response.status})`);
+        }
+        
+        const text = await response.text();
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          console.error("API 回傳異常內容:", text);
+          throw new Error("後端沒有回傳正確資料 (🚨請確認 GAS 的「執行身分」為「我」，且已建立「新版本」)");
+        }
+      } catch (err) {
+        throw new Error("連線遭到拒絕！請確保 GAS 部署權限設定為「所有人」且執行身分設定為「我」。");
+      }
+    }
+
+    function loadFiles() {
+      const listDiv = document.getElementById('fileList');
+      listDiv.innerHTML = '<div class="p-4 text-center font-bold text-gray-700">載入中...</div>';
+      
+      if(GAS_URL === 'YOUR_GAS_API_URL_HERE') {
+        listDiv.innerHTML = '<div class="p-4 text-center font-bold text-red-700">請先在程式碼中設定你的 GAS_URL！</div>';
+        return;
+      }
+
+      fetch(GAS_URL + "?action=list")
+        .then(response => {
+          if (!response.ok) throw new Error("網路連線異常 (狀態碼：" + response.status + ")。");
+          return response.text();
+        })
+        .then(text => {
+          try {
+            return JSON.parse(text);
+          } catch(e) {
+            console.error("原始回傳字串:", text);
+            throw new Error("後端回傳格式異常 (🚨請確認 GAS 有部署為『新版本』！)");
+          }
+        })
+        .then(data => {
+          if (Array.isArray(data)) {
+            throw new Error("偵測到舊版 GAS 程式碼！請重新發布為新版本。");
+          }
+          allFiles = data.files || [];
+          currentFilteredFiles = [...allFiles];
+          updateCategoryOptions(data.categories || []);
+          renderList();
+        })
+        .catch(error => {
+          listDiv.innerHTML = `
+            <div class="p-6 text-left font-bold text-red-800 bg-red-100 rounded border border-red-400">
+              <h3 class="text-lg mb-2 border-b border-red-300 pb-1">❌ 載入失敗</h3>
+              <p class="text-sm">${error.message}</p>
+            </div>
+          `;
+        });
+    }
+
+    function updateCategoryOptions(categories) {
+      const filterSelect = document.getElementById('categoryFilter');
+      const oldCatSelect = document.getElementById('oldCategorySelect');
+      const uploadSelect = document.getElementById('uploadCategorySelect');
+      
+      const currentFilterVal = filterSelect.value;
+      const currentOldCatVal = oldCatSelect ? oldCatSelect.value : '';
+      const currentUploadVal = uploadSelect ? uploadSelect.value : '';
+
+      const combinedCategories = new Set([...categories, ...userCreatedCategories].filter(Boolean));
+      
+      filterSelect.innerHTML = '<option value="all" class="font-bold">所有分類</option>';
+      if (oldCatSelect) oldCatSelect.innerHTML = '<option value="" class="font-bold">選擇要修改的分類</option>';
+      if (uploadSelect) uploadSelect.innerHTML = '<option value="未分類" class="font-bold">未分類</option>';
+
+      combinedCategories.forEach(cat => {
+        if (cat !== '未分類') {
+          if (uploadSelect) {
+            const optU = document.createElement('option');
+            optU.value = cat;
+            optU.textContent = cat;
+            optU.className = "font-medium";
+            uploadSelect.appendChild(optU);
+          }
+          if (oldCatSelect) {
+            const option3 = document.createElement('option');
+            option3.value = cat;
+            option3.textContent = cat;
+            option3.className = "font-medium";
+            oldCatSelect.appendChild(option3);
+          }
+        }
+        
+        const option2 = document.createElement('option');
+        option2.value = cat;
+        option2.textContent = cat;
+        option2.className = "font-medium";
+        filterSelect.appendChild(option2);
+      });
+
+      if (uploadSelect) {
+        const customOpt = document.createElement('option');
+        customOpt.value = '__CUSTOM__';
+        customOpt.textContent = '+ 自訂新分類...';
+        customOpt.className = "font-bold text-blue-700";
+        uploadSelect.appendChild(customOpt);
+
+        if (currentUploadVal === '__CUSTOM__') {
+           uploadSelect.value = '__CUSTOM__';
+        } else if (Array.from(uploadSelect.options).some(o => o.value === currentUploadVal)) {
+           uploadSelect.value = currentUploadVal;
+        } else {
+           uploadSelect.value = '未分類';
+        }
+        toggleUploadCustomCategory();
+      }
+
+      if (Array.from(filterSelect.options).some(o => o.value === currentFilterVal)) {
+        filterSelect.value = currentFilterVal;
+      }
+      if (oldCatSelect && Array.from(oldCatSelect.options).some(o => o.value === currentOldCatVal)) {
+        oldCatSelect.value = currentOldCatVal;
+      }
+    }
+
+    function toggleUploadCustomCategory() {
+      const selectVal = document.getElementById('uploadCategorySelect').value;
+      const input = document.getElementById('uploadCustomCategoryInput');
+      if (selectVal === '__CUSTOM__') {
+        input.classList.remove('hidden');
+      } else {
+        input.classList.add('hidden');
+      }
+    }
+
+    function filterFiles() {
+      const selectedCat = document.getElementById('categoryFilter').value;
+      const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+
+      currentFilteredFiles = allFiles.filter(f => {
+        const matchCategory = selectedCat === 'all' || f.category === selectedCat;
+        const matchSearch = f.name.toLowerCase().includes(searchQuery);
+        return matchCategory && matchSearch;
+      });
+      
+      currentPage = 1;
+      renderList();
+    }
+
+    function changeItemsPerPage() {
+      itemsPerPage = document.getElementById('itemsPerPageSelect').value;
+      currentPage = 1;
+      renderList();
+    }
+
+    function changePage(delta) {
+      currentPage += delta;
+      renderList();
+    }
+
+    function getFileIconSVG(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      let svgContent = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>`;
+      let colorClass = "text-gray-500"; 
+
+      if (['html', 'htm'].includes(ext)) {
+        svgContent = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>`;
+        colorClass = "text-green-600";
+      } else if (['pdf'].includes(ext)) {
+        svgContent = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path><text x="9.5" y="16" font-size="5.5" font-family="sans-serif" font-weight="900" fill="currentColor" stroke="none">PDF</text>`;
+        colorClass = "text-red-600";
+      } else if (['doc', 'docx'].includes(ext)) {
+        svgContent = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>`;
+        colorClass = "text-blue-700";
+      } else if (['xls', 'xlsx', 'csv'].includes(ext)) {
+        svgContent = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>`;
+        colorClass = "text-green-700";
+      } else if (['ppt', 'pptx'].includes(ext)) {
+        svgContent = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>`;
+        colorClass = "text-orange-600";
+      } else if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(ext)) {
+        svgContent = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>`;
+        colorClass = "text-yellow-600";
+      } else if (['zip', 'rar', '7z'].includes(ext)) {
+        svgContent = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>`;
+        colorClass = "text-purple-600";
+      }
+
+      return `<svg class="w-6 h-6 ${colorClass} flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">${svgContent}</svg>`;
+    }
+
+    function renderList() {
+      const listDiv = document.getElementById('fileList');
+      const paginationControls = document.getElementById('paginationControls');
+      listDiv.innerHTML = '';
+      
+      if(currentFilteredFiles.length === 0) {
+        listDiv.innerHTML = '<div class="p-4 text-center font-bold text-gray-700">目前沒有任何檔案</div>';
+        paginationControls.classList.add('hidden');
+        return;
+      }
+
+      paginationControls.classList.remove('hidden');
+
+      let totalItems = currentFilteredFiles.length;
+      let totalPages = itemsPerPage === 'all' ? 1 : Math.ceil(totalItems / itemsPerPage);
+      
+      if (currentPage > totalPages) currentPage = totalPages || 1;
+      if (currentPage < 1) currentPage = 1;
+
+      let startIndex = itemsPerPage === 'all' ? 0 : (currentPage - 1) * itemsPerPage;
+      let endIndex = itemsPerPage === 'all' ? totalItems : Math.min(startIndex + parseInt(itemsPerPage), totalItems);
+
+      let filesToShow = currentFilteredFiles.slice(startIndex, endIndex);
+
+      filesToShow.forEach(file => {
+        const div = document.createElement('div');
+        div.className = "p-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-100 transition gap-3";
+
+        const catBadge = file.category && file.category !== '未分類'
+          ? `<span class="px-2 py-1 bg-purple-100 text-purple-900 border border-purple-300 text-xs rounded mr-3 whitespace-nowrap font-bold">${file.category}</span>`
+          : `<span class="px-2 py-1 bg-gray-100 text-gray-800 border border-gray-400 text-xs rounded mr-3 whitespace-nowrap font-bold">未分類</span>`;
+
+        let linkHtml = '';
+        const safeFileName = file.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const displayFileName = file.name.replace(/\.[^/.]+$/, ""); 
+        const ext = file.name.split('.').pop().toLowerCase();
+        const fileIcon = getFileIconSVG(file.name); 
+
+        const directDownloadExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
+
+        if (file.isHtml) {
+          const fileId = file.id || (file.url.match(/fileId=([^&]+)/) ? file.url.match(/fileId=([^&]+)/)[1] : '');
+          linkHtml = `
+            <a href="javascript:void(0)" onclick="openCleanHtml('${fileId}', '${safeFileName}')" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-black text-[15px] flex items-center gap-2" title="${file.name}">
+              ${fileIcon} <span class="truncate">${displayFileName}</span>
+            </a>`;
+        } else if (directDownloadExts.includes(ext) && file.id) {
+          linkHtml = `
+            <a href="javascript:void(0)" onclick="downloadPrivateFile('${file.id}', '${safeFileName}.${ext}')" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-black text-[15px] flex items-center gap-2" title="${file.name} (點擊下載)">
+              ${fileIcon} <span class="truncate">${displayFileName}</span>
+            </a>`;
+        } else {
+          linkHtml = `
+            <a href="${file.url}" target="_blank" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-black text-[15px] flex items-center gap-2" title="${file.name}">
+              ${fileIcon} <span class="truncate">${displayFileName}</span>
+            </a>`;
+        }
+        
+        let adminActions = '';
+        if (adminPassword) {
+            adminActions = `
+              <div class="flex items-center gap-2 mt-2 md:mt-0 md:ml-4 flex-wrap justify-end">
+                <button onclick="openChangeCategoryModal('${file.id}', '${safeFileName}', '${file.category || '未分類'}')" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded transition whitespace-nowrap border border-transparent">修改分類</button>
+                <button onclick="renameFile('${file.id}', '${safeFileName}')" class="px-3 py-1.5 bg-yellow-700 hover:bg-yellow-800 text-white font-bold text-xs rounded transition whitespace-nowrap border border-transparent">重新命名</button>
+                <button onclick="deleteFile('${file.id}', '${safeFileName}')" class="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white font-bold text-xs rounded transition whitespace-nowrap border border-transparent">刪除</button>
+              </div>
+            `;
+        }
+
+        div.innerHTML = `
+          <div class="flex items-center flex-1 min-w-0">
+            ${catBadge}
+            <div class="truncate mr-4 min-w-0">${linkHtml}</div>
+          </div>
+          <div class="flex flex-col md:flex-row md:items-center justify-end flex-shrink-0">
+            <div class="text-sm font-bold text-gray-700 whitespace-nowrap hidden md:block">${file.date}</div>
+            ${adminActions}
+          </div>
+        `;
+        listDiv.appendChild(div);
+      });
+
+      document.getElementById('pageInfo').innerText = `第 ${currentPage} / ${totalPages} 頁 (共 ${totalItems} 筆)`;
+      document.getElementById('prevBtn').disabled = currentPage <= 1;
+      document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+    }
+
+    function openCleanHtml(fileId, fileName) {
+      if(!fileId || GAS_URL === 'YOUR_GAS_API_URL_HERE') return;
+      const newWin = window.open('', '_blank');
+      if (!newWin) {
+        alert("請允許瀏覽器顯示彈出視窗，才能開啟網頁！");
+        return;
+      }
+      newWin.document.write('<h3 style="font-family: sans-serif; font-weight: bold; padding: 20px; color: #374151;">網頁載入中，請稍候...</h3>');
+      newWin.document.title = fileName;
+      fetch(GAS_URL + "?action=getContent&fileId=" + fileId)
+        .then(response => {
+          if (!response.ok) throw new Error("連線失敗");
+          return response.text();
+        })
+        .then(htmlContent => {
+          newWin.document.open();
+          newWin.document.write(htmlContent);
+          newWin.document.close();
+        })
+        .catch(error => {
+          newWin.document.body.innerHTML = '<h3 style="color: #b91c1c; font-weight: bold; font-family: sans-serif; padding: 20px;">讀取失敗，請確認網路連線或 API 設定。</h3>';
+        });
+    }
+
+    function downloadPrivateFile(fileId, fileName) {
+      if(!fileId || GAS_URL === 'YOUR_GAS_API_URL_HERE') return;
+      
+      const toast = document.getElementById('downloadToast');
+      const toastText = document.getElementById('downloadToastText');
+      toast.classList.remove('hidden');
+      toastText.innerText = '從私人雲端下載中...';
+
+      fetch(GAS_URL + "?action=downloadFile&fileId=" + fileId)
+        .then(response => {
+          if (!response.ok) throw new Error("連線失敗");
+          return response.json();
+        })
+        .then(data => {
+          if(data.success) {
+            toastText.innerText = '檔案轉換中...';
+            fetch(`data:${data.mimeType};base64,${data.data}`)
+              .then(res => res.blob())
+              .then(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = data.filename || fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                toast.classList.add('hidden');
+              });
+          } else {
+            toast.classList.add('hidden');
+            alert("下載失敗：" + data.message);
+          }
+        })
+        .catch(error => {
+          toast.classList.add('hidden');
+          alert("讀取失敗，這可能是因為檔案太大或網路連線中斷。");
+        });
+    }
+
+    /* --- 管理員功能 --- */
+    function showLoginModal() {
+      if (adminPassword) {
+        if(confirm("目前已登入管理員，是否要登出並隱藏控制台？")) {
+          logoutAdmin();
+        }
+        return;
+      }
+      document.getElementById('loginModal').classList.remove('hidden');
+      document.getElementById('adminPwdInput').value = '';
+      document.getElementById('loginStatus').innerText = '';
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.add('hidden');
+    }
+
+    function logoutAdmin() {
+      adminPassword = '';
+      document.getElementById('adminSection').classList.add('hidden');
+      alert("已登出管理員控制台");
+      renderList(); 
+    }
+
+    function verifyAdmin() {
+      const pwd = document.getElementById('adminPwdInput').value;
+      const statusText = document.getElementById('loginStatus');
+      const btn = document.getElementById('loginBtn');
+
+      if(!pwd) {
+        statusText.innerText = '密碼不能為空';
+        return;
+      }
+
+      btn.disabled = true;
+      statusText.innerText = '驗證中...';
+
+      fetch(GAS_URL + "?action=verify&password=" + encodeURIComponent(pwd))
+        .then(async response => {
+          const text = await response.text();
+          try {
+             return JSON.parse(text);
+          } catch(e) {
+             throw new Error("後端回傳格式異常 (🚨請至 GAS 重新部署為『新版本』！)");
+          }
+        })
+        .then(data => {
+          btn.disabled = false;
+          if (data.success) {
+            adminPassword = pwd;
+            closeLoginModal();
+            document.getElementById('adminSection').classList.remove('hidden');
+            renderList(); 
+          } else {
+            statusText.innerText = '密碼錯誤';
+          }
+        })
+        .catch(error => {
+          btn.disabled = false;
+          statusText.innerText = '錯誤: ' + error.message;
+        });
+    }
+
+    function createCategory() {
+      const catName = document.getElementById('newCategoryInput').value.trim();
+      const statusText = document.getElementById('createCatStatus');
+      const btn = document.getElementById('createCatBtn');
+      
+      if(!catName) {
+        statusText.innerHTML = "<span class='text-red-700'>請輸入分類名稱</span>";
+        return;
+      }
+      
+      statusText.innerText = "建立中...";
+      btn.disabled = true;
+      
+      apiPost({ action: 'createCategory', categoryName: catName, password: adminPassword })
+      .then(data => {
+        btn.disabled = false;
+        if(data.success) {
+          statusText.innerHTML = "<span class='text-green-700'>" + data.message + "</span>";
+          
+          if (!userCreatedCategories.includes(catName)) {
+            userCreatedCategories.push(catName);
+          }
+          
+          document.getElementById('newCategoryInput').value = '';
+          loadFiles();
+          
+          setTimeout(() => {
+             const uploadSelect = document.getElementById('uploadCategorySelect');
+             if(uploadSelect) uploadSelect.value = catName;
+             toggleUploadCustomCategory();
+          }, 500);
+        } else {
+          statusText.innerHTML = "<span class='text-red-700'>" + data.message + "</span>";
+        }
+      })
+      .catch(err => {
+        btn.disabled = false;
+        statusText.innerHTML = "<span class='text-red-700 font-bold'>" + err.message + "</span>";
+      });
+    }
+
+    function renameCategory() {
+      const oldCatName = document.getElementById('oldCategorySelect').value;
+      const newCatName = document.getElementById('renameCategoryInput').value.trim();
+      const statusText = document.getElementById('renameCatStatus');
+      const btn = document.getElementById('renameCatBtn');
+      
+      if(!oldCatName) { statusText.innerHTML = "<span class='text-red-700'>請先選擇要修改的分類</span>"; return; }
+      if(!newCatName) { statusText.innerHTML = "<span class='text-red-700'>請輸入新名稱</span>"; return; }
+      if(oldCatName === newCatName) { statusText.innerHTML = "<span class='text-red-700'>新舊名稱不能相同</span>"; return; }
+      
+      statusText.innerText = "修改中...";
+      btn.disabled = true;
+      
+      apiPost({ action: 'renameCategory', oldCategoryName: oldCatName, newCategoryName: newCatName, password: adminPassword })
+      .then(data => {
+        btn.disabled = false;
+        if(data.success) {
+          statusText.innerHTML = "<span class='text-green-700'>" + data.message + "</span>";
+          userCreatedCategories = userCreatedCategories.filter(c => c !== oldCatName);
+          if (!userCreatedCategories.includes(newCatName)) userCreatedCategories.push(newCatName);
+          
+          document.getElementById('renameCategoryInput').value = '';
+          document.getElementById('oldCategorySelect').value = '';
+          const filterSelect = document.getElementById('categoryFilter');
+          if (filterSelect.value === oldCatName) filterSelect.value = 'all';
+          loadFiles();
+        } else {
+          statusText.innerHTML = "<span class='text-red-700'>" + data.message + "</span>";
+        }
+      })
+      .catch(err => {
+        btn.disabled = false;
+        statusText.innerHTML = "<span class='text-red-700 font-bold'>" + err.message + "</span>";
+      });
+    }
+
+    function changePassword() {
+      const newPwd = document.getElementById('newPasswordInput').value.trim();
+      const statusText = document.getElementById('changePwdStatus');
+      const btn = document.getElementById('changePwdBtn');
+      
+      if(!newPwd) { statusText.innerHTML = "<span class='text-red-700'>請輸入新密碼</span>"; return; }
+      
+      statusText.innerText = "更新中...";
+      btn.disabled = true;
+      
+      apiPost({ action: 'changePassword', newPassword: newPwd, password: adminPassword })
+      .then(data => {
+        btn.disabled = false;
+        if(data.success) {
+          statusText.innerHTML = "<span class='text-green-700'>" + data.message + "</span>";
+          adminPassword = newPwd;
+          document.getElementById('newPasswordInput').value = '';
+        } else {
+          statusText.innerHTML = "<span class='text-red-700'>" + data.message + "</span>";
+        }
+      })
+      .catch(err => {
+        btn.disabled = false;
+        statusText.innerHTML = "<span class='text-red-700 font-bold'>" + err.message + "</span>";
+      });
+    }
+
+    async function upload() {
+      const fileInput = document.getElementById('fileInput');
+      const statusText = document.getElementById('uploadStatus');
+      const btn = document.getElementById('uploadBtn');
+      
+      if(fileInput.files.length === 0) {
+        statusText.innerHTML = "<span class='text-red-700'>請先選擇至少一個檔案！</span>";
+        return;
+      }
+
+      let categoryValue = document.getElementById('uploadCategorySelect').value;
+      if (categoryValue === '__CUSTOM__') {
+        categoryValue = document.getElementById('uploadCustomCategoryInput').value.trim();
+        if (!categoryValue) {
+          statusText.innerHTML = "<span class='text-red-700'>請輸入新分類名稱！</span>";
+          return;
+        }
+      }
+
+      btn.disabled = true;
+      const files = Array.from(fileInput.files);
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        statusText.innerText = `上傳中 (${i+1}/${files.length}): ${file.name}...`;
+
+        try {
+          const base64Data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+            reader.onerror = (e) => reject(e);
+            reader.readAsDataURL(file);
+          });
+
+          const data = await apiPost({
+            action: 'upload',
+            base64Data: base64Data,
+            filename: file.name,
+            mimeType: file.type,
+            category: categoryValue || '未分類',
+            password: adminPassword
+          });
+
+          if(data.success) {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error("Upload failed for", file.name, data.message);
+          }
+        } catch(error) {
+          errorCount++;
+          console.error("Error uploading", file.name, error);
+        }
+      }
+
+      btn.disabled = false;
+      fileInput.value = '';
+
+      if (errorCount === 0) {
+        statusText.innerHTML = `<span class='text-green-700'>✅ 全部 ${successCount} 個檔案上傳成功！</span>`;
+        if (categoryValue !== '未分類' && !userCreatedCategories.includes(categoryValue)) {
+          userCreatedCategories.push(categoryValue);
+          setTimeout(() => {
+             const uploadSelect = document.getElementById('uploadCategorySelect');
+             if(uploadSelect) uploadSelect.value = categoryValue;
+             toggleUploadCustomCategory();
+          }, 500);
+        }
+      } else {
+        statusText.innerHTML = `<span class='text-red-700'>⚠️ 上傳完畢。成功: ${successCount}, 失敗: ${errorCount}</span>`;
+      }
+      
+      loadFiles();
+    }
+
+    function renameFile(fileId, oldName) {
+      const extensionMatch = oldName.match(/\.[^/.]+$/);
+      const extension = extensionMatch ? extensionMatch[0] : "";
+      const nameWithoutExt = oldName.replace(/\.[^/.]+$/, "");
+
+      let newName = prompt('請輸入新的檔案名稱：', nameWithoutExt);
+      if (!newName || newName === nameWithoutExt) return; 
+      newName = newName + extension;
+
+      apiPost({ action: 'renameFile', fileId: fileId, newName: newName, password: adminPassword })
+      .then(data => {
+        if(data.success) {
+          alert('重新命名成功！');
+          loadFiles(); 
+        } else {
+          alert('重新命名失敗：' + data.message);
+        }
+      })
+      .catch(err => {
+        alert('發生錯誤: ' + err.message);
+      });
+    }
+
+    function deleteFile(fileId, fileName) {
+      if (!confirm(`確定要刪除「${fileName}」嗎？\n此動作將會把檔案移至垃圾桶。`)) return;
+
+      apiPost({ action: 'deleteFile', fileId: fileId, password: adminPassword })
+      .then(data => {
+        if(data.success) {
+          alert('刪除成功！');
+          loadFiles(); 
+        } else {
+          alert('刪除失敗：' + data.message);
+        }
+      })
+      .catch(err => {
+        alert('發生錯誤: ' + err.message);
+      });
+    }
+
+    function openChangeCategoryModal(fileId, fileName, currentCategory) {
+      currentChangeFileId = fileId;
+      document.getElementById('changeCategoryFileName').innerText = '檔案：' + fileName;
+      document.getElementById('changeCategoryStatus').innerText = '';
+      
+      const select = document.getElementById('newCategorySelect');
+      select.innerHTML = '';
+      
+      const allCategories = new Set([...Array.from(document.getElementById('categoryList').options).map(o => o.value), ...userCreatedCategories]);
+      allCategories.add('未分類'); 
+
+      allCategories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        opt.className = "font-medium";
+        if (cat === currentCategory) {
+          opt.selected = true; 
+        }
+        select.appendChild(opt);
+      });
+
+      const customOpt = document.createElement('option');
+      customOpt.value = '__CUSTOM__';
+      customOpt.textContent = '+ 自訂新分類...';
+      customOpt.className = "font-bold text-blue-700";
+      select.appendChild(customOpt);
+
+      toggleCustomCategoryInput(); 
+      document.getElementById('changeCategoryModal').classList.remove('hidden');
+    }
+
+    function closeChangeCategoryModal() {
+      document.getElementById('changeCategoryModal').classList.add('hidden');
+      currentChangeFileId = null;
+    }
+
+    function toggleCustomCategoryInput() {
+      const selectVal = document.getElementById('newCategorySelect').value;
+      const input = document.getElementById('customCategoryInput');
+      if (selectVal === '__CUSTOM__') {
+        input.classList.remove('hidden');
+        input.value = '';
+        input.focus();
+      } else {
+        input.classList.add('hidden');
+      }
+    }
+
+    function submitChangeCategory() {
+      let newCategory = document.getElementById('newCategorySelect').value;
+      
+      if (newCategory === '__CUSTOM__') {
+        newCategory = document.getElementById('customCategoryInput').value.trim();
+        if (!newCategory) {
+          document.getElementById('changeCategoryStatus').innerText = '請輸入新分類名稱';
+          return;
+        }
+      }
+
+      const statusText = document.getElementById('changeCategoryStatus');
+      const btn = document.getElementById('submitChangeCatBtn');
+      
+      statusText.innerText = "修改中...";
+      btn.disabled = true;
+
+      apiPost({ action: 'moveFile', fileId: currentChangeFileId, newCategory: newCategory, password: adminPassword })
+      .then(data => {
+        btn.disabled = false;
+        if(data.success) {
+          if (newCategory !== '未分類' && !userCreatedCategories.includes(newCategory)) {
+            userCreatedCategories.push(newCategory);
+          }
+          closeChangeCategoryModal();
+          loadFiles(); 
+        } else {
+          statusText.innerText = '分類修改失敗：' + data.message;
+        }
+      })
+      .catch(err => {
+        btn.disabled = false;
+        statusText.innerText = '錯誤: ' + err.message;
+      });
+    }
+
+  </script>
+</body>
+</html>
