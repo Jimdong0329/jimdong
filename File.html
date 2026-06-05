@@ -129,8 +129,21 @@
     </div>
   </div>
 
+  <!-- ✨ 全新修復：本頁全螢幕預覽 Modal (完美支援 Safari) ✨ -->
+  <div id="previewModal" class="hidden fixed inset-0 bg-white flex flex-col transition-opacity" style="z-index: 9000;">
+    <div class="flex-1 relative w-full h-full">
+      <div id="previewLoading" class="absolute inset-0 flex items-center justify-center text-gray-600 font-bold text-lg">網頁載入中，請稍候...</div>
+      <iframe id="previewIframe" class="w-full h-full border-none hidden" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+    </div>
+    <!-- 強制置頂的返回按鈕，設定極高 z-index 保證絕對不會被網頁蓋住 -->
+    <button onclick="closePreviewModal()" class="fixed bottom-6 right-6 bg-gray-800 hover:bg-gray-700 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-2 transition-transform transform hover:scale-105 border border-gray-600" style="z-index: 10000;" title="返回列表">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      <span class="font-bold tracking-wider text-sm">返回列表</span>
+    </button>
+  </div>
+
   <!-- 下載進度提示 Toast -->
-  <div id="downloadToast" class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[80] bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-opacity duration-300 border border-gray-600">
+  <div id="downloadToast" class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-opacity duration-300 border border-gray-600" style="z-index: 10000;">
     <svg class="animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -139,20 +152,7 @@
   </div>
 
   <!-- 管理員登入 Modal -->
-  <div id="loginModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 transition-opacity p-4">
-    <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm border border-gray-400">
-      <h3 class="text-lg font-bold mb-4 text-gray-900 border-b pb-2">管理員登入</h3>
-      <input type="password" id="adminPwdInput" placeholder="請輸入密碼" class="border border-gray-400 rounded px-3 py-2 w-full mb-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-700" />
-      <div class="flex justify-end space-x-2">
-        <button onclick="closeLoginModal()" class="px-4 py-2 font-bold text-gray-800 hover:bg-gray-200 border border-gray-400 rounded transition">取消</button>
-        <button onclick="verifyAdmin()" id="loginBtn" class="px-4 py-2 font-bold bg-blue-700 hover:bg-blue-800 text-white rounded transition border border-transparent">登入</button>
-      </div>
-      <p id="loginStatus" class="mt-3 text-sm font-bold text-red-700 text-center"></p>
-    </div>
-  </div>
-
-  <!-- 修改分類的下拉選單 Modal -->
-  <div id="changeCategoryModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 transition-opacity p-4">
+  <div id="loginModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center transition-opacity p-4" style="z-index: 9999;">
     <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm border border-gray-400">
       <h3 class="text-lg font-bold mb-2 text-gray-900 border-b pb-2">修改檔案分類</h3>
       <p id="changeCategoryFileName" class="text-sm font-bold text-gray-700 mb-4 truncate"></p>
@@ -467,29 +467,52 @@
       document.getElementById('nextBtn').disabled = currentPage >= totalPages;
     }
 
+    // ✨ 恢復並優化：使用同頁 Modal 開啟，完美避開 Safari 阻擋 ✨
     function openCleanHtml(fileId, fileName) {
       if(!fileId || GAS_URL === 'YOUR_GAS_API_URL_HERE') return;
-      const newWin = window.open('', '_blank');
-      if (!newWin) {
-        alert("請允許瀏覽器顯示彈出視窗，才能開啟網頁！");
-        return;
-      }
-      newWin.document.write('<h3 style="font-family: sans-serif; font-weight: bold; padding: 20px; color: #374151;">網頁載入中，請稍候...</h3>');
-      newWin.document.title = fileName;
+
+      // 寫入瀏覽器歷史紀錄，讓手機「側滑返回」也能直接關閉網頁
+      history.pushState({ preview: true }, "", "#preview");
+
+      document.getElementById('previewModal').classList.remove('hidden');
+      document.getElementById('previewLoading').classList.remove('hidden');
+      document.getElementById('previewLoading').innerHTML = '網頁載入中，請稍候...';
+      document.getElementById('previewIframe').classList.add('hidden');
+      document.getElementById('previewIframe').srcdoc = '';
+
       fetch(GAS_URL + "?action=getContent&fileId=" + fileId)
         .then(response => {
           if (!response.ok) throw new Error("連線失敗");
           return response.text();
         })
         .then(htmlContent => {
-          newWin.document.open();
-          newWin.document.write(htmlContent);
-          newWin.document.close();
+          const iframe = document.getElementById('previewIframe');
+          iframe.srcdoc = htmlContent;
+          document.getElementById('previewLoading').classList.add('hidden');
+          iframe.classList.remove('hidden');
         })
         .catch(error => {
-          newWin.document.body.innerHTML = '<h3 style="color: #b91c1c; font-weight: bold; font-family: sans-serif; padding: 20px;">讀取失敗，請確認網路連線或 API 設定。</h3>';
+          document.getElementById('previewLoading').innerHTML = '<span class="text-red-700 font-bold">讀取失敗，請確認網路連線或 API 設定。</span>';
         });
     }
+
+    function hidePreviewModal() {
+      document.getElementById('previewModal').classList.add('hidden');
+      document.getElementById('previewIframe').srcdoc = '';
+    }
+
+    function closePreviewModal() {
+      if (location.hash === '#preview') {
+        history.back(); // 觸發 popstate 事件來關閉
+      } else {
+        hidePreviewModal();
+      }
+    }
+
+    // 監聽手機實體返回鍵或側滑手勢
+    window.addEventListener('popstate', function(event) {
+      hidePreviewModal();
+    });
 
     function downloadPrivateFile(fileId, fileName) {
       if(!fileId || GAS_URL === 'YOUR_GAS_API_URL_HERE') return;
