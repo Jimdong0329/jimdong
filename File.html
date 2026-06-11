@@ -12,7 +12,6 @@
     <!-- 標題與管理員入口 -->
     <div class="flex justify-between items-center mb-6 border-b-2 border-gray-800 pb-4">
       <h1 class="text-2xl font-black text-gray-900">📁 檔案櫃</h1>
-      <!-- ✨ 終極隱藏版登入圖示：極度淡化、移除提示文字、滑鼠懸浮才浮現 ✨ -->
       <button onclick="showLoginModal()" class="text-gray-300 opacity-20 hover:opacity-100 hover:text-gray-600 transition duration-500 cursor-pointer focus:outline-none" title="">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
@@ -134,15 +133,14 @@
       <iframe id="previewIframe" class="w-full h-full border-none hidden" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads"></iframe>
     </div>
     
-    <!-- ✨ 優化手機版返回按鈕：半透明隱身、體積縮小、貼近邊緣 ✨ -->
     <button onclick="closePreviewModal()" class="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-gray-800 bg-opacity-40 hover:bg-opacity-100 text-white w-11 h-11 md:w-14 md:h-14 rounded-full shadow-lg hover:shadow-2xl flex items-center justify-center transition-all duration-300 border border-gray-500 border-opacity-50 hover:border-opacity-100 backdrop-filter backdrop-blur-sm" style="z-index: 10000;" title="返回列表">
       <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
     </button>
   </div>
 
-  <!-- 下載進度提示 Toast -->
+  <!-- 下載/複製進度提示 Toast -->
   <div id="downloadToast" class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 transition-opacity duration-300 border border-gray-600" style="z-index: 10000;">
-    <svg class="animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
+    <svg id="toastSpinner" class="animate-spin w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
@@ -182,7 +180,7 @@
 
   <script>
     // 🔥 警告：請務必將下方的網址替換成你的 GAS 應用程式網址 🔥
-   const GAS_URL = 'https://script.google.com/macros/s/AKfycbzMCAfYxuS4pZAWBfIK51r8T21q7R1x_ficfirrtJalbmhluwbTlWCV1Qx4NXRUL_8djg/exec';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzMCAfYxuS4pZAWBfIK51r8T21q7R1x_ficfirrtJalbmhluwbTlWCV1Qx4NXRUL_8djg/exec';
     
     let allFiles = []; 
     let currentFilteredFiles = [];
@@ -192,35 +190,29 @@
     let userCreatedCategories = []; 
     let currentChangeFileId = null; 
 
-    document.addEventListener("DOMContentLoaded", loadFiles);
+    // ✨ 頁面載入時檢查是否有被分享的 fileId ✨
+    document.addEventListener("DOMContentLoaded", () => {
+      loadFiles();
 
-    // ✨ 動態產生分類顏色：針對不同分類字串給予固定的底色 ✨
+      const urlParams = new URLSearchParams(window.location.search);
+      const sharedFileId = urlParams.get('fileId');
+      if (sharedFileId) {
+        openCleanHtml(sharedFileId, '載入中...');
+      }
+    });
+
     function getCategoryColorClass(categoryName) {
       if (!categoryName || categoryName === '未分類') {
-        return "bg-gray-200 text-gray-700"; // 預設顏色
+        return "bg-gray-200 text-gray-700"; 
       }
-      
-      // 定義好的彩色調色盤 (Tailwind 柔和色系)
       const palette = [
-        "bg-blue-100 text-blue-800",
-        "bg-green-100 text-green-800",
-        "bg-yellow-100 text-yellow-800",
-        "bg-purple-100 text-purple-800",
-        "bg-pink-100 text-pink-800",
-        "bg-indigo-100 text-indigo-800",
-        "bg-teal-100 text-teal-800",
-        "bg-orange-100 text-orange-800",
-        "bg-cyan-100 text-cyan-800",
-        "bg-rose-100 text-rose-800"
+        "bg-blue-100 text-blue-800", "bg-green-100 text-green-800", "bg-yellow-100 text-yellow-800",
+        "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800", "bg-indigo-100 text-indigo-800",
+        "bg-teal-100 text-teal-800", "bg-orange-100 text-orange-800", "bg-cyan-100 text-cyan-800", "bg-rose-100 text-rose-800"
       ];
-
-      // 計算簡單的雜湊值 (Hash)，確保同名稱固定拿到同一個顏色
       let hash = 0;
-      for (let i = 0; i < categoryName.length; i++) {
-        hash = categoryName.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      const index = Math.abs(hash) % palette.length;
-      return palette[index];
+      for (let i = 0; i < categoryName.length; i++) hash = categoryName.charCodeAt(i) + ((hash << 5) - hash);
+      return palette[Math.abs(hash) % palette.length];
     }
 
     async function apiPost(payload) {
@@ -230,16 +222,11 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload)
         });
-        
-        if (!response.ok) {
-          throw new Error(`網路錯誤或被阻擋 (HTTP 狀態碼 ${response.status})`);
-        }
-        
+        if (!response.ok) throw new Error(`網路錯誤或被阻擋 (HTTP 狀態碼 ${response.status})`);
         const text = await response.text();
         try {
           return JSON.parse(text);
         } catch (e) {
-          console.error("API 回傳異常內容:", text);
           throw new Error("後端沒有回傳正確資料 (🚨請確認 GAS 已建立「新版本」)");
         }
       } catch (err) {
@@ -249,8 +236,6 @@
 
     function loadFiles() {
       const listDiv = document.getElementById('fileList');
-      listDiv.innerHTML = '<div class="p-4 text-center font-bold text-gray-700">載入中...</div>';
-      
       if(GAS_URL === 'YOUR_GAS_API_URL_HERE') {
         listDiv.innerHTML = '<div class="p-4 text-center font-bold text-red-700">請先在程式碼中設定你的 GAS_URL！</div>';
         return;
@@ -262,29 +247,17 @@
           return response.text();
         })
         .then(text => {
-          try {
-            return JSON.parse(text);
-          } catch(e) {
-            console.error("原始回傳字串:", text);
-            throw new Error("後端回傳格式異常 (🚨請確認 GAS 有部署為『新版本』！)");
-          }
+          try { return JSON.parse(text); } catch(e) { throw new Error("後端回傳格式異常 (🚨請確認 GAS 有部署為『新版本』！)"); }
         })
         .then(data => {
-          if (Array.isArray(data)) {
-            throw new Error("偵測到舊版 GAS 程式碼！請重新發布為新版本。");
-          }
+          if (Array.isArray(data)) throw new Error("偵測到舊版 GAS 程式碼！請重新發布為新版本。");
           allFiles = data.files || [];
           currentFilteredFiles = [...allFiles];
           updateCategoryOptions(data.categories || []);
           renderList();
         })
         .catch(error => {
-          listDiv.innerHTML = `
-            <div class="p-6 text-left font-bold text-red-800 bg-red-100 rounded border border-red-400">
-              <h3 class="text-lg mb-2 border-b border-red-300 pb-1">❌ 載入失敗</h3>
-              <p class="text-sm">${error.message}</p>
-            </div>
-          `;
+          listDiv.innerHTML = `<div class="p-6 text-left font-bold text-red-800 bg-red-100 rounded border border-red-400"><h3 class="text-lg mb-2 border-b border-red-300 pb-1">❌ 載入失敗</h3><p class="text-sm">${error.message}</p></div>`;
         });
     }
 
@@ -307,60 +280,40 @@
         if (cat !== '未分類') {
           if (uploadSelect) {
             const optU = document.createElement('option');
-            optU.value = cat;
-            optU.textContent = cat;
-            optU.className = "font-medium";
+            optU.value = cat; optU.textContent = cat; optU.className = "font-medium";
             uploadSelect.appendChild(optU);
           }
           if (oldCatSelect) {
             const option3 = document.createElement('option');
-            option3.value = cat;
-            option3.textContent = cat;
-            option3.className = "font-medium";
+            option3.value = cat; option3.textContent = cat; option3.className = "font-medium";
             oldCatSelect.appendChild(option3);
           }
         }
-        
         const option2 = document.createElement('option');
-        option2.value = cat;
-        option2.textContent = cat;
-        option2.className = "font-medium";
+        option2.value = cat; option2.textContent = cat; option2.className = "font-medium";
         filterSelect.appendChild(option2);
       });
 
       if (uploadSelect) {
         const customOpt = document.createElement('option');
-        customOpt.value = '__CUSTOM__';
-        customOpt.textContent = '+ 自訂新分類...';
-        customOpt.className = "font-bold text-blue-700";
+        customOpt.value = '__CUSTOM__'; customOpt.textContent = '+ 自訂新分類...'; customOpt.className = "font-bold text-blue-700";
         uploadSelect.appendChild(customOpt);
 
-        if (currentUploadVal === '__CUSTOM__') {
-           uploadSelect.value = '__CUSTOM__';
-        } else if (Array.from(uploadSelect.options).some(o => o.value === currentUploadVal)) {
-           uploadSelect.value = currentUploadVal;
-        } else {
-           uploadSelect.value = '未分類';
-        }
+        if (currentUploadVal === '__CUSTOM__') uploadSelect.value = '__CUSTOM__';
+        else if (Array.from(uploadSelect.options).some(o => o.value === currentUploadVal)) uploadSelect.value = currentUploadVal;
+        else uploadSelect.value = '未分類';
         toggleUploadCustomCategory();
       }
 
-      if (Array.from(filterSelect.options).some(o => o.value === currentFilterVal)) {
-        filterSelect.value = currentFilterVal;
-      }
-      if (oldCatSelect && Array.from(oldCatSelect.options).some(o => o.value === currentOldCatVal)) {
-        oldCatSelect.value = currentOldCatVal;
-      }
+      if (Array.from(filterSelect.options).some(o => o.value === currentFilterVal)) filterSelect.value = currentFilterVal;
+      if (oldCatSelect && Array.from(oldCatSelect.options).some(o => o.value === currentOldCatVal)) oldCatSelect.value = currentOldCatVal;
     }
 
     function toggleUploadCustomCategory() {
       const selectVal = document.getElementById('uploadCategorySelect').value;
       const input = document.getElementById('uploadCustomCategoryInput');
-      if (selectVal === '__CUSTOM__') {
-        input.classList.remove('hidden');
-      } else {
-        input.classList.add('hidden');
-      }
+      if (selectVal === '__CUSTOM__') input.classList.remove('hidden');
+      else input.classList.add('hidden');
     }
 
     function filterFiles() {
@@ -372,7 +325,6 @@
         const matchSearch = f.name.toLowerCase().includes(searchQuery);
         return matchCategory && matchSearch;
       });
-      
       currentPage = 1;
       renderList();
     }
@@ -386,6 +338,33 @@
     function changePage(delta) {
       currentPage += delta;
       renderList();
+    }
+
+    // ✨ 專屬分享連結複製功能 ✨
+    function copyShareLink(fileId, event) {
+      if (event) event.stopPropagation();
+      const shareUrl = window.location.origin + window.location.pathname + '?fileId=' + fileId;
+      
+      const tempInput = document.createElement("input");
+      tempInput.value = shareUrl;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempInput);
+      
+      const toast = document.getElementById('downloadToast');
+      const toastText = document.getElementById('downloadToastText');
+      const spinner = document.getElementById('toastSpinner');
+      
+      toast.classList.remove('hidden');
+      spinner.classList.add('hidden');
+      toastText.innerText = '✅ 已複製專屬網頁連結！';
+      
+      setTimeout(() => {
+        toast.classList.add('hidden');
+        spinner.classList.remove('hidden'); // 重設為預設狀態
+        toastText.innerText = '正在準備檔案...';
+      }, 2500);
     }
 
     function renderList() {
@@ -417,18 +396,27 @@
         div.className = "p-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 transition gap-3 border-b border-gray-200 last:border-0";
 
         let linkHtml = '';
+        let copyBtnHtml = '';
         const safeFileName = file.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const displayFileName = file.name.replace(/\.[^/.]+$/, ""); 
         const ext = file.name.split('.').pop().toLowerCase();
-
         const directDownloadExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
 
+        // ✨ 建立真實的 href 超連結與獨立的複製按鈕 ✨
         if (file.isHtml) {
           const fileId = file.id || (file.url.match(/fileId=([^&]+)/) ? file.url.match(/fileId=([^&]+)/)[1] : '');
+          const shareUrl = "?fileId=" + fileId;
+          
           linkHtml = `
-            <a href="javascript:void(0)" onclick="openCleanHtml('${fileId}', '${safeFileName}')" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-bold text-lg" title="${file.name}">
+            <a href="${shareUrl}" onclick="openCleanHtml('${fileId}', '${safeFileName}'); return false;" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-bold text-lg" title="點擊預覽，或點擊右鍵複製/新分頁開啟">
               ${displayFileName}
             </a>`;
+            
+          copyBtnHtml = `
+            <button onclick="copyShareLink('${fileId}', event)" class="ml-2 flex-shrink-0 text-gray-400 hover:text-blue-600 transition outline-none" title="複製此網頁的分享連結">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+            </button>`;
+            
         } else if (directDownloadExts.includes(ext) && file.id) {
           linkHtml = `
             <a href="javascript:void(0)" onclick="downloadPrivateFile('${file.id}', '${safeFileName}.${ext}')" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-bold text-lg" title="${file.name} (點擊下載)">
@@ -452,14 +440,14 @@
             `;
         }
 
-        // ✨ 取得專屬的彩色標籤 CSS ✨
         const categoryName = file.category || '未分類';
         const badgeColorClass = getCategoryColorClass(categoryName);
 
         div.innerHTML = `
           <div class="flex items-center flex-1 min-w-0 py-1">
             <span class="text-sm font-bold ${badgeColorClass} px-3 py-1.5 rounded-md mr-4 truncate min-w-[4rem] max-w-[120px] text-center flex-shrink-0">${categoryName}</span>
-            <div class="truncate mr-4 min-w-0">${linkHtml}</div>
+            <div class="truncate min-w-0">${linkHtml}</div>
+            ${copyBtnHtml}
           </div>
           <div class="flex flex-col md:flex-row md:items-center justify-end flex-shrink-0">
             <span class="text-sm text-gray-500 font-mono hidden sm:block">${file.date}</span>
@@ -506,12 +494,20 @@
       document.getElementById('previewIframe').srcdoc = '';
     }
 
+    // ✨ 關閉預覽時，如果是透過分享連結進來的，幫他把網址清空回歸乾淨列表 ✨
     function closePreviewModal() {
       if (location.hash === '#preview') {
         history.back(); 
       } else {
         hidePreviewModal();
       }
+      
+      setTimeout(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('fileId')) {
+           window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }, 100);
     }
 
     window.addEventListener('popstate', function(event) {
@@ -523,7 +519,10 @@
       
       const toast = document.getElementById('downloadToast');
       const toastText = document.getElementById('downloadToastText');
+      const spinner = document.getElementById('toastSpinner');
+      
       toast.classList.remove('hidden');
+      spinner.classList.remove('hidden');
       toastText.innerText = '從私人雲端下載中...';
 
       fetch(GAS_URL + "?action=downloadFile&fileId=" + fileId)
