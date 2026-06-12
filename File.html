@@ -133,7 +133,8 @@
       <iframe id="previewIframe" class="w-full h-full border-none hidden" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads"></iframe>
     </div>
     
-    <button onclick="closePreviewModal()" class="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-gray-800 bg-opacity-40 hover:bg-opacity-100 text-white w-11 h-11 md:w-14 md:h-14 rounded-full shadow-lg hover:shadow-2xl flex items-center justify-center transition-all duration-300 border border-gray-500 border-opacity-50 hover:border-opacity-100 backdrop-filter backdrop-blur-sm" style="z-index: 10000;" title="返回列表">
+    <!-- 加上 id="previewBackButton" 讓 JS 能夠控制是否隱藏 -->
+    <button id="previewBackButton" onclick="closePreviewModal()" class="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-gray-800 bg-opacity-40 hover:bg-opacity-100 text-white w-11 h-11 md:w-14 md:h-14 rounded-full shadow-lg hover:shadow-2xl flex items-center justify-center transition-all duration-300 border border-gray-500 border-opacity-50 hover:border-opacity-100 backdrop-filter backdrop-blur-sm" style="z-index: 10000;" title="返回列表">
       <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
     </button>
   </div>
@@ -190,14 +191,23 @@
     let userCreatedCategories = []; 
     let currentChangeFileId = null; 
 
-    // ✨ 頁面載入時檢查是否有被分享的 fileId ✨
+    // ✨ 頁面載入邏輯更新 ✨
     document.addEventListener("DOMContentLoaded", () => {
-      loadFiles();
-
       const urlParams = new URLSearchParams(window.location.search);
       const sharedFileId = urlParams.get('fileId');
+      
       if (sharedFileId) {
+        // [分享模式]：隱藏返回按鈕，並且「不載入」背景的檔案列表，提升隱私性！
+        const backBtn = document.getElementById('previewBackButton');
+        if (backBtn) backBtn.style.display = 'none';
+        
+        // 修改背景文字，讓底圖看起來更單純
+        document.getElementById('fileList').innerHTML = '<div class="p-4 text-center font-bold text-gray-400">目前為獨立預覽模式</div>';
+        
         openCleanHtml(sharedFileId, '載入中...');
+      } else {
+        // [正常模式]：載入整個檔案櫃列表
+        loadFiles();
       }
     });
 
@@ -240,6 +250,8 @@
         listDiv.innerHTML = '<div class="p-4 text-center font-bold text-red-700">請先在程式碼中設定你的 GAS_URL！</div>';
         return;
       }
+
+      listDiv.innerHTML = '<div class="p-4 text-center font-bold text-gray-700">載入中...</div>';
 
       fetch(GAS_URL + "?action=list")
         .then(response => {
