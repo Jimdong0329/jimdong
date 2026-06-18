@@ -7,7 +7,9 @@
   <title>檔案櫃</title>
 </head>
 <body class="bg-gray-100 p-4 md:p-6 font-sans text-gray-800">
-  <div class="max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow-md relative border border-gray-300">
+  
+  <!-- ✨ 加上 id="mainDashboard" 讓系統可以徹底隱藏背景 ✨ -->
+  <div id="mainDashboard" class="max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow-md relative border border-gray-300">
     
     <!-- 標題與管理員入口 -->
     <div class="flex justify-between items-center mb-6 border-b-2 border-gray-800 pb-4">
@@ -133,7 +135,6 @@
       <iframe id="previewIframe" class="w-full h-full border-none hidden" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads"></iframe>
     </div>
     
-    <!-- 加上 id="previewBackButton" 讓 JS 能夠控制是否隱藏 -->
     <button id="previewBackButton" onclick="closePreviewModal()" class="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-gray-800 bg-opacity-40 hover:bg-opacity-100 text-white w-11 h-11 md:w-14 md:h-14 rounded-full shadow-lg hover:shadow-2xl flex items-center justify-center transition-all duration-300 border border-gray-500 border-opacity-50 hover:border-opacity-100 backdrop-filter backdrop-blur-sm" style="z-index: 10000;" title="返回列表">
       <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
     </button>
@@ -181,7 +182,8 @@
 
   <script>
     // 🔥 警告：請務必將下方的網址替換成你的 GAS 應用程式網址 🔥
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzMCAfYxuS4pZAWBfIK51r8T21q7R1x_ficfirrtJalbmhluwbTlWCV1Qx4NXRUL_8djg/exec';
+   const GAS_URL = 'https://script.google.com/macros/s/AKfycbzMCAfYxuS4pZAWBfIK51r8T21q7R1x_ficfirrtJalbmhluwbTlWCV1Qx4NXRUL_8djg/exec';
+    
     
     let allFiles = []; 
     let currentFilteredFiles = [];
@@ -197,14 +199,14 @@
       const sharedFileId = urlParams.get('fileId');
       
       if (sharedFileId) {
-        // [分享模式]：隱藏返回按鈕，並且「不載入」背景的檔案列表，提升隱私性！
+        // [分享模式]：隱藏整個檔案櫃背景，避免按上一頁看到殘留畫面
+        document.getElementById('mainDashboard').style.display = 'none';
+        
         const backBtn = document.getElementById('previewBackButton');
         if (backBtn) backBtn.style.display = 'none';
         
-        // 修改背景文字，讓底圖看起來更單純
-        document.getElementById('fileList').innerHTML = '<div class="p-4 text-center font-bold text-gray-400">目前為獨立預覽模式</div>';
-        
-        openCleanHtml(sharedFileId, '載入中...');
+        // 傳入 true 標記為直接分享，不要產生歷史紀錄
+        openCleanHtml(sharedFileId, '載入中...', true);
       } else {
         // [正常模式]：載入整個檔案櫃列表
         loadFiles();
@@ -474,10 +476,14 @@
       document.getElementById('nextBtn').disabled = currentPage >= totalPages;
     }
 
-    function openCleanHtml(fileId, fileName) {
+    // ✨ 修改 3：加上 isDirectShare 參數，判斷是否要攔截上一頁動作 ✨
+    function openCleanHtml(fileId, fileName, isDirectShare = false) {
       if(!fileId || GAS_URL === 'YOUR_GAS_API_URL_HERE') return;
 
-      history.pushState({ preview: true }, "", "#preview");
+      // 只有在「正常瀏覽模式」下，才寫入瀏覽紀錄 (讓手機側滑可以關閉預覽退回檔案列表)
+      if (!isDirectShare) {
+        history.pushState({ preview: true }, "", "#preview");
+      }
 
       document.getElementById('previewModal').classList.remove('hidden');
       document.getElementById('previewLoading').classList.remove('hidden');
