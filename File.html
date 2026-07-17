@@ -131,7 +131,15 @@
   <!-- 本頁全螢幕預覽 Modal (防 Safari 阻擋) -->
   <div id="previewModal" class="hidden fixed inset-0 bg-white flex flex-col transition-opacity" style="z-index: 9000;">
     <div class="flex-1 relative w-full h-full">
-      <div id="previewLoading" class="absolute inset-0 flex items-center justify-center text-gray-600 font-bold text-lg">網頁載入中，請稍候...</div>
+      <div id="previewLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 bg-opacity-90 backdrop-blur-sm transition-all duration-300 z-50">
+        <!-- ✨ 預覽載入中加上檔名顯示 ✨ -->
+        <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span id="previewLoadingText" class="text-gray-700 font-bold text-xl mb-2">網頁載入中...</span>
+        <span id="previewLoadingFileName" class="text-gray-500 font-medium text-sm">請稍候</span>
+      </div>
       <iframe id="previewIframe" class="w-full h-full border-none hidden" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads"></iframe>
     </div>
     
@@ -182,7 +190,7 @@
 
   <script>
     // 🔥 警告：請務必將下方的網址替換成你的 GAS 應用程式網址 🔥
-   const GAS_URL = 'https://script.google.com/macros/s/AKfycbzMCAfYxuS4pZAWBfIK51r8T21q7R1x_ficfirrtJalbmhluwbTlWCV1Qx4NXRUL_8djg/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzMCAfYxuS4pZAWBfIK51r8T21q7R1x_ficfirrtJalbmhluwbTlWCV1Qx4NXRUL_8djg/exec';
     
     
     let allFiles = []; 
@@ -193,10 +201,11 @@
     let userCreatedCategories = []; 
     let currentChangeFileId = null; 
 
-    // ✨ 頁面載入邏輯更新 ✨
+    // ✨ 頁面載入邏輯更新，支援抓取 fileName 參數 ✨
     document.addEventListener("DOMContentLoaded", () => {
       const urlParams = new URLSearchParams(window.location.search);
       const sharedFileId = urlParams.get('fileId');
+      const sharedFileName = urlParams.get('fileName');
       
       if (sharedFileId) {
         // [分享模式]：隱藏整個檔案櫃背景，避免按上一頁看到殘留畫面
@@ -206,7 +215,7 @@
         if (backBtn) backBtn.style.display = 'none';
         
         // 傳入 true 標記為直接分享，不要產生歷史紀錄
-        openCleanHtml(sharedFileId, '載入中...', true);
+        openCleanHtml(sharedFileId, sharedFileName ? decodeURIComponent(sharedFileName) : '載入中...', true);
       } else {
         // [正常模式]：載入整個檔案櫃列表
         loadFiles();
@@ -354,10 +363,11 @@
       renderList();
     }
 
-    // ✨ 專屬分享連結複製功能 ✨
-    function copyShareLink(fileId, event) {
+    // ✨ 專屬分享連結複製功能 (加入 fileName 參數) ✨
+    function copyShareLink(fileId, fileName, event) {
       if (event) event.stopPropagation();
-      const shareUrl = window.location.origin + window.location.pathname + '?fileId=' + fileId;
+      const safeFileName = encodeURIComponent(fileName.replace(/\.[^/.]+$/, ""));
+      const shareUrl = window.location.origin + window.location.pathname + `?fileId=${fileId}&fileName=${safeFileName}`;
       
       const tempInput = document.createElement("input");
       tempInput.value = shareUrl;
@@ -411,7 +421,7 @@
 
         let linkHtml = '';
         let copyBtnHtml = '';
-        const safeFileName = file.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const safeFileNameForJS = file.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const displayFileName = file.name.replace(/\.[^/.]+$/, ""); 
         const ext = file.name.split('.').pop().toLowerCase();
         const directDownloadExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
@@ -419,21 +429,21 @@
         // ✨ 建立真實的 href 超連結與獨立的複製按鈕 ✨
         if (file.isHtml) {
           const fileId = file.id || (file.url.match(/fileId=([^&]+)/) ? file.url.match(/fileId=([^&]+)/)[1] : '');
-          const shareUrl = "?fileId=" + fileId;
+          const shareUrl = `?fileId=${fileId}&fileName=${encodeURIComponent(displayFileName)}`;
           
           linkHtml = `
-            <a href="${shareUrl}" onclick="openCleanHtml('${fileId}', '${safeFileName}'); return false;" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-bold text-lg" title="點擊預覽，或點擊右鍵複製/新分頁開啟">
+            <a href="${shareUrl}" onclick="openCleanHtml('${fileId}', '${safeFileNameForJS}'); return false;" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-bold text-lg" title="點擊預覽，或點擊右鍵複製/新分頁開啟">
               ${displayFileName}
             </a>`;
             
           copyBtnHtml = `
-            <button onclick="copyShareLink('${fileId}', event)" class="ml-2 flex-shrink-0 text-gray-400 hover:text-blue-600 transition outline-none" title="複製此網頁的分享連結">
+            <button onclick="copyShareLink('${fileId}', '${safeFileNameForJS}', event)" class="ml-2 flex-shrink-0 text-gray-400 hover:text-blue-600 transition outline-none" title="複製此網頁的分享連結">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
             </button>`;
             
         } else if (directDownloadExts.includes(ext) && file.id) {
           linkHtml = `
-            <a href="javascript:void(0)" onclick="downloadPrivateFile('${file.id}', '${safeFileName}.${ext}')" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-bold text-lg" title="${file.name} (點擊下載)">
+            <a href="javascript:void(0)" onclick="downloadPrivateFile('${file.id}', '${safeFileNameForJS}.${ext}')" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-bold text-lg" title="${file.name} (點擊下載)">
               ${displayFileName}
             </a>`;
         } else {
@@ -447,9 +457,9 @@
         if (adminPassword) {
             adminActions = `
               <div class="flex items-center gap-1 mt-2 md:mt-0 ml-0 md:ml-4 flex-wrap justify-end">
-                <button onclick="openChangeCategoryModal('${file.id}', '${safeFileName}', '${file.category || '未分類'}')" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded transition whitespace-nowrap">分類</button>
-                <button onclick="renameFile('${file.id}', '${safeFileName}')" class="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white font-bold text-xs rounded transition whitespace-nowrap">改名</button>
-                <button onclick="deleteFile('${file.id}', '${safeFileName}')" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded transition whitespace-nowrap">刪除</button>
+                <button onclick="openChangeCategoryModal('${file.id}', '${safeFileNameForJS}', '${file.category || '未分類'}')" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded transition whitespace-nowrap">分類</button>
+                <button onclick="renameFile('${file.id}', '${safeFileNameForJS}')" class="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white font-bold text-xs rounded transition whitespace-nowrap">改名</button>
+                <button onclick="deleteFile('${file.id}', '${safeFileNameForJS}')" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded transition whitespace-nowrap">刪除</button>
               </div>
             `;
         }
@@ -476,18 +486,20 @@
       document.getElementById('nextBtn').disabled = currentPage >= totalPages;
     }
 
-    // ✨ 修改 3：加上 isDirectShare 參數，判斷是否要攔截上一頁動作 ✨
+    // ✨ 修改：顯示檔名，並提供更友善的載入畫面 ✨
     function openCleanHtml(fileId, fileName, isDirectShare = false) {
       if(!fileId || GAS_URL === 'YOUR_GAS_API_URL_HERE') return;
 
-      // 只有在「正常瀏覽模式」下，才寫入瀏覽紀錄 (讓手機側滑可以關閉預覽退回檔案列表)
       if (!isDirectShare) {
         history.pushState({ preview: true }, "", "#preview");
       }
 
       document.getElementById('previewModal').classList.remove('hidden');
       document.getElementById('previewLoading').classList.remove('hidden');
-      document.getElementById('previewLoading').innerHTML = '網頁載入中，請稍候...';
+      
+      const displayFileName = fileName.replace(/\.[^/.]+$/, "");
+      document.getElementById('previewLoadingFileName').innerText = displayFileName !== '載入中...' ? `正在開啟：${displayFileName}` : '請稍候...';
+      
       document.getElementById('previewIframe').classList.add('hidden');
       document.getElementById('previewIframe').srcdoc = '';
 
@@ -499,8 +511,12 @@
         .then(htmlContent => {
           const iframe = document.getElementById('previewIframe');
           iframe.srcdoc = htmlContent;
-          document.getElementById('previewLoading').classList.add('hidden');
-          iframe.classList.remove('hidden');
+          
+          // 加一點點延遲，讓畫面感覺更滑順
+          setTimeout(() => {
+            document.getElementById('previewLoading').classList.add('hidden');
+            iframe.classList.remove('hidden');
+          }, 300);
         })
         .catch(error => {
           document.getElementById('previewLoading').innerHTML = '<span class="text-red-700 font-bold">讀取失敗，請確認網路連線或 API 設定。</span>';
@@ -512,7 +528,6 @@
       document.getElementById('previewIframe').srcdoc = '';
     }
 
-    // ✨ 關閉預覽時，如果是透過分享連結進來的，幫他把網址清空回歸乾淨列表 ✨
     function closePreviewModal() {
       if (location.hash === '#preview') {
         history.back(); 
