@@ -3,12 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- ✨ 加入通用的 Open Graph 標籤，確保分享時能產生好看的卡片 ✨ -->
+  <meta property="og:title" content="📄 雲端檔案分享">
+  <meta property="og:description" content="點擊此連結以查看或下載分享的檔案內容。">
+  <meta property="og:type" content="website">
+  
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <title>檔案櫃</title>
 </head>
 <body class="bg-gray-100 p-4 md:p-6 font-sans text-gray-800">
   
-  <!-- ✨ 加上 id="mainDashboard" 讓系統可以徹底隱藏背景 ✨ -->
   <div id="mainDashboard" class="max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow-md relative border border-gray-300">
     
     <!-- 標題與管理員入口 -->
@@ -131,15 +136,7 @@
   <!-- 本頁全螢幕預覽 Modal (防 Safari 阻擋) -->
   <div id="previewModal" class="hidden fixed inset-0 bg-white flex flex-col transition-opacity" style="z-index: 9000;">
     <div class="flex-1 relative w-full h-full">
-      <div id="previewLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 bg-opacity-90 backdrop-blur-sm transition-all duration-300 z-50">
-        <!-- ✨ 預覽載入中加上檔名顯示 ✨ -->
-        <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <span id="previewLoadingText" class="text-gray-700 font-bold text-xl mb-2">網頁載入中...</span>
-        <span id="previewLoadingFileName" class="text-gray-500 font-medium text-sm">請稍候</span>
-      </div>
+      <div id="previewLoading" class="absolute inset-0 flex items-center justify-center text-gray-600 font-bold text-lg">網頁載入中，請稍候...</div>
       <iframe id="previewIframe" class="w-full h-full border-none hidden" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads"></iframe>
     </div>
     
@@ -190,9 +187,7 @@
 
   <script>
     // 🔥 警告：請務必將下方的網址替換成你的 GAS 應用程式網址 🔥
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzMCAfYxuS4pZAWBfIK51r8T21q7R1x_ficfirrtJalbmhluwbTlWCV1Qx4NXRUL_8djg/exec';
-    
-    
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzMCAfYxuS4pZAWBfIK51r8T21q7R1x_ficfirrtJalbmhluwbTlWCV1Qx4NXRUL_8djg/exec';
     let allFiles = []; 
     let currentFilteredFiles = [];
     let currentPage = 1;
@@ -201,21 +196,20 @@
     let userCreatedCategories = []; 
     let currentChangeFileId = null; 
 
-    // ✨ 頁面載入邏輯更新，支援抓取 fileName 參數 ✨
+    // ✨ 頁面載入邏輯：解析從 GAS 跳轉過來時帶上的 fileName 參數 ✨
     document.addEventListener("DOMContentLoaded", () => {
       const urlParams = new URLSearchParams(window.location.search);
       const sharedFileId = urlParams.get('fileId');
-      const sharedFileName = urlParams.get('fileName');
       
       if (sharedFileId) {
-        // [分享模式]：隱藏整個檔案櫃背景，避免按上一頁看到殘留畫面
+        // [分享模式]：隱藏背景，不留殘影
         document.getElementById('mainDashboard').style.display = 'none';
         
         const backBtn = document.getElementById('previewBackButton');
         if (backBtn) backBtn.style.display = 'none';
         
-        // 傳入 true 標記為直接分享，不要產生歷史紀錄
-        openCleanHtml(sharedFileId, sharedFileName ? decodeURIComponent(sharedFileName) : '載入中...', true);
+        // ✨ 直接使用抓到的檔名來顯示，讓等待體驗更好 ✨
+        openCleanHtml(sharedFileId, '載入中...', true);
       } else {
         // [正常模式]：載入整個檔案櫃列表
         loadFiles();
@@ -363,34 +357,6 @@
       renderList();
     }
 
-    // ✨ 專屬分享連結複製功能 (加入 fileName 參數) ✨
-    function copyShareLink(fileId, fileName, event) {
-      if (event) event.stopPropagation();
-      const safeFileName = encodeURIComponent(fileName.replace(/\.[^/.]+$/, ""));
-      const shareUrl = window.location.origin + window.location.pathname + `?fileId=${fileId}&fileName=${safeFileName}`;
-      
-      const tempInput = document.createElement("input");
-      tempInput.value = shareUrl;
-      document.body.appendChild(tempInput);
-      tempInput.select();
-      document.execCommand("copy");
-      document.body.removeChild(tempInput);
-      
-      const toast = document.getElementById('downloadToast');
-      const toastText = document.getElementById('downloadToastText');
-      const spinner = document.getElementById('toastSpinner');
-      
-      toast.classList.remove('hidden');
-      spinner.classList.add('hidden');
-      toastText.innerText = '✅ 已複製專屬網頁連結！';
-      
-      setTimeout(() => {
-        toast.classList.add('hidden');
-        spinner.classList.remove('hidden'); // 重設為預設狀態
-        toastText.innerText = '正在準備檔案...';
-      }, 2500);
-    }
-
     function renderList() {
       const listDiv = document.getElementById('fileList');
       const paginationControls = document.getElementById('paginationControls');
@@ -421,7 +387,7 @@
 
         let linkHtml = '';
         let copyBtnHtml = '';
-        const safeFileNameForJS = file.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const safeFileName = file.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const displayFileName = file.name.replace(/\.[^/.]+$/, ""); 
         const ext = file.name.split('.').pop().toLowerCase();
         const directDownloadExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
@@ -429,21 +395,22 @@
         // ✨ 建立真實的 href 超連結與獨立的複製按鈕 ✨
         if (file.isHtml) {
           const fileId = file.id || (file.url.match(/fileId=([^&]+)/) ? file.url.match(/fileId=([^&]+)/)[1] : '');
-          const shareUrl = `?fileId=${fileId}&fileName=${encodeURIComponent(displayFileName)}`;
+          const shareUrl = "?fileId=" + fileId;
           
           linkHtml = `
-            <a href="${shareUrl}" onclick="openCleanHtml('${fileId}', '${safeFileNameForJS}'); return false;" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-bold text-lg" title="點擊預覽，或點擊右鍵複製/新分頁開啟">
+            <a href="${shareUrl}" onclick="openCleanHtml('${fileId}', '${safeFileName}'); return false;" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-bold text-lg" title="點擊預覽，或點擊右鍵複製/新分頁開啟">
               ${displayFileName}
             </a>`;
             
+          // ✨ 把 displayFileName 傳進分享函數裡 ✨
           copyBtnHtml = `
-            <button onclick="copyShareLink('${fileId}', '${safeFileNameForJS}', event)" class="ml-2 flex-shrink-0 text-gray-400 hover:text-blue-600 transition outline-none" title="複製此網頁的分享連結">
+            <button onclick="copyShareLink('${fileId}', '${safeFileName}', event)" class="ml-2 flex-shrink-0 text-gray-400 hover:text-blue-600 transition outline-none" title="複製此網頁的分享連結">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
             </button>`;
             
         } else if (directDownloadExts.includes(ext) && file.id) {
           linkHtml = `
-            <a href="javascript:void(0)" onclick="downloadPrivateFile('${file.id}', '${safeFileNameForJS}.${ext}')" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-bold text-lg" title="${file.name} (點擊下載)">
+            <a href="javascript:void(0)" onclick="downloadPrivateFile('${file.id}', '${safeFileName}.${ext}')" class="text-blue-700 hover:text-blue-900 hover:underline truncate font-bold text-lg" title="${file.name} (點擊下載)">
               ${displayFileName}
             </a>`;
         } else {
@@ -457,9 +424,9 @@
         if (adminPassword) {
             adminActions = `
               <div class="flex items-center gap-1 mt-2 md:mt-0 ml-0 md:ml-4 flex-wrap justify-end">
-                <button onclick="openChangeCategoryModal('${file.id}', '${safeFileNameForJS}', '${file.category || '未分類'}')" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded transition whitespace-nowrap">分類</button>
-                <button onclick="renameFile('${file.id}', '${safeFileNameForJS}')" class="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white font-bold text-xs rounded transition whitespace-nowrap">改名</button>
-                <button onclick="deleteFile('${file.id}', '${safeFileNameForJS}')" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded transition whitespace-nowrap">刪除</button>
+                <button onclick="openChangeCategoryModal('${file.id}', '${safeFileName}', '${file.category || '未分類'}')" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded transition whitespace-nowrap">分類</button>
+                <button onclick="renameFile('${file.id}', '${safeFileName}')" class="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white font-bold text-xs rounded transition whitespace-nowrap">改名</button>
+                <button onclick="deleteFile('${file.id}', '${safeFileName}')" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded transition whitespace-nowrap">刪除</button>
               </div>
             `;
         }
@@ -486,7 +453,53 @@
       document.getElementById('nextBtn').disabled = currentPage >= totalPages;
     }
 
-    // ✨ 修改：顯示檔名，並提供更友善的載入畫面 ✨
+    // ✨ 專屬分享連結複製功能 (升級為「圖文並茂」與「手機原生分享」) ✨
+    function copyShareLink(fileId, fileName, event) {
+      if (event) event.stopPropagation();
+      
+      // ✨ 自動去除副檔名 (將 .pdf, .docx 等結尾刪除) ✨
+      const displayFileName = fileName.replace(/\.[^/.]+$/, "");
+      
+      // ✨ 1. 網址變短：拿掉又臭又長的 fileName 參數，只保留核心 fileId ✨
+      const shareUrl = window.location.origin + window.location.pathname + '?fileId=' + fileId;
+      
+      // ✨ 2. 文字包裝：極簡風格，使用去除了副檔名的乾淨名稱 ✨
+      const shareText = `📄 ${displayFileName}\n${shareUrl}`;
+      
+      // ✨ 3. 手機優先：如果是手機，優先呼叫系統內建分享選單 (體驗超好！) ✨
+      if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        navigator.share({
+          title: displayFileName,
+          text: `📄 ${displayFileName}\n`,
+          url: shareUrl
+        }).catch(err => console.log('分享取消:', err));
+        return; // 結束執行
+      }
+      
+      // ✨ 4. 電腦版：如果手機不支援或是電腦版，複製整段文字到剪貼簿 ✨
+      const tempInput = document.createElement("textarea"); // 必須用 textarea 才能複製換行 (\n)
+      tempInput.value = shareText;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempInput);
+      
+      const toast = document.getElementById('downloadToast');
+      const toastText = document.getElementById('downloadToastText');
+      const spinner = document.getElementById('toastSpinner');
+      
+      toast.classList.remove('hidden');
+      spinner.classList.add('hidden');
+      toastText.innerText = '✅ 已複製分享文字與連結！';
+      
+      setTimeout(() => {
+        toast.classList.add('hidden');
+        spinner.classList.remove('hidden'); // 重設為預設狀態
+        toastText.innerText = '正在準備檔案...';
+      }, 2500);
+    }
+
+    // ✨ 修改 3：加上 isDirectShare 參數，判斷是否要攔截上一頁動作 ✨
     function openCleanHtml(fileId, fileName, isDirectShare = false) {
       if(!fileId || GAS_URL === 'YOUR_GAS_API_URL_HERE') return;
 
@@ -495,11 +508,19 @@
       }
 
       document.getElementById('previewModal').classList.remove('hidden');
-      document.getElementById('previewLoading').classList.remove('hidden');
       
-      const displayFileName = fileName.replace(/\.[^/.]+$/, "");
-      document.getElementById('previewLoadingFileName').innerText = displayFileName !== '載入中...' ? `正在開啟：${displayFileName}` : '請稍候...';
+      const loadingDiv = document.getElementById('previewLoading');
+      loadingDiv.classList.remove('hidden');
       
+      // 動態顯示正在載入的檔案名稱
+      const displayFileName = fileName.replace(/\.[^/.]+$/, ""); // 去掉副檔名
+      loadingDiv.innerHTML = `正在開啟：<span class="text-blue-700 ml-2 font-black">${displayFileName}</span>...`;
+      
+      // ✨ 同步更改網頁的標題 ✨
+      if (displayFileName && displayFileName !== '載入中') {
+         document.title = displayFileName;
+      }
+
       document.getElementById('previewIframe').classList.add('hidden');
       document.getElementById('previewIframe').srcdoc = '';
 
@@ -511,23 +532,21 @@
         .then(htmlContent => {
           const iframe = document.getElementById('previewIframe');
           iframe.srcdoc = htmlContent;
-          
-          // 加一點點延遲，讓畫面感覺更滑順
-          setTimeout(() => {
-            document.getElementById('previewLoading').classList.add('hidden');
-            iframe.classList.remove('hidden');
-          }, 300);
+          loadingDiv.classList.add('hidden');
+          iframe.classList.remove('hidden');
         })
         .catch(error => {
-          document.getElementById('previewLoading').innerHTML = '<span class="text-red-700 font-bold">讀取失敗，請確認網路連線或 API 設定。</span>';
+          loadingDiv.innerHTML = '<span class="text-red-700 font-bold">讀取失敗，請確認網路連線或 API 設定。</span>';
         });
     }
 
     function hidePreviewModal() {
       document.getElementById('previewModal').classList.add('hidden');
       document.getElementById('previewIframe').srcdoc = '';
+      document.title = '檔案櫃'; // 關閉時把標題改回來
     }
 
+    // 關閉預覽時，如果是透過分享連結進來的，幫他把網址清空回歸乾淨列表
     function closePreviewModal() {
       if (location.hash === '#preview') {
         history.back(); 
